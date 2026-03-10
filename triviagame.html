@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 TriviaQuiz · categories · timer · leaderboard</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(145deg, #0d1b2a 0%, #1b2f44 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            padding: 1rem;
+        }
+
+        .game-container {
+            max-width: 1000px;
+            width: 100%;
+            background: rgba(22, 40, 62, 0.8);
+            backdrop-filter: blur(12px);
+            border-radius: 3rem;
+            padding: 2rem;
+            box-shadow: 0 25px 45px -10px #00000080, inset 0 1px 2px #ffffff30;
+            border: 1px solid #457b9d40;
+        }
+
+        /* panels */
+        .panel {
+            background: #0f2838c0;
+            border-radius: 2rem;
+            padding: 1.8rem;
+            border: 1px solid #2c5a7a;
+            box-shadow: inset 0 2px 8px #00000040;
+            margin-bottom: 1.8rem;
+        }
+
+        .setup-panel {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            min-width: 160px;
+        }
+
+        .input-group label {
+            color: #bbe1fa;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+
+        select, input {
+            background: #1e405b;
+            border: 1px solid #5f8db0;
+            border-radius: 3rem;
+            padding: 0.8rem 1.5rem;
+            font-size: 1.1rem;
+            color: white;
+            outline: none;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        select option { background: #1e405b; }
+
+        select:hover, input:hover {
+            border-color: #a2d2ff;
+        }
+
+        .btn {
+            background: #3a6d8c;
+            border: none;
+            border-radius: 3rem;
+            padding: 0.9rem 2.2rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: white;
+            box-shadow: 0 8px 0 #1a3a4e, 0 10px 20px #00000040;
+            cursor: pointer;
+            transition: 0.07s linear;
+            border: 1px solid #9ac7ff60;
+        }
+
+        .btn:active {
+            transform: translateY(6px);
+            box-shadow: 0 2px 0 #1a3a4e, 0 5px 12px black;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            transform: translateY(0);
+            box-shadow: 0 4px 0 #1a3a4e;
+            pointer-events: none;
+        }
+
+        /* game header */
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+            background: #0f2c3b;
+            padding: 1rem 2rem;
+            border-radius: 4rem;
+        }
+
+        .badge {
+            background: #245b78;
+            padding: 0.5rem 1.2rem;
+            border-radius: 3rem;
+            font-weight: 600;
+            color: #e0f2ff;
+        }
+
+        .timer {
+            font-size: 2rem;
+            font-family: monospace;
+            background: #1b4b62;
+            padding: 0.2rem 1.5rem;
+            border-radius: 4rem;
+            border: 2px solid #9ad0ff;
+            color: #fff3b3;
+            text-shadow: 0 0 6px orange;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 18px;
+            background: #1d3f53;
+            border-radius: 30px;
+            margin: 0.5rem 0 1.5rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #43aa8b, #4c9aff);
+            transition: width 0.1s linear;
+            border-radius: 30px;
+        }
+
+        /* question area */
+        .question-text {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #f0f9ff;
+            margin-bottom: 2rem;
+            line-height: 1.4;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.2rem;
+            margin: 2rem 0 1.5rem;
+        }
+
+        .option-btn {
+            background: #163f55;
+            border: 2px solid #357da0;
+            border-radius: 3rem;
+            padding: 1.2rem 1rem;
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: white;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 6px 0 #0e2d3b;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            background: #1f5e7a;
+            transform: scale(1.01);
+        }
+
+        .option-btn.correct-animation {
+            background: #1f9c5a;
+            border-color: #b7ffb7;
+            box-shadow: 0 0 18px #3eff9e;
+            transition: 0.1s;
+        }
+
+        .option-btn.wrong-animation {
+            background: #b13e3e;
+            border-color: #ffbaba;
+            box-shadow: 0 0 18px #ff6060;
+            animation: shake 0.15s 2;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(7px); }
+            50% { transform: translateX(-7px); }
+            75% { transform: translateX(4px); }
+            100% { transform: translateX(0); }
+        }
+
+        .next-btn {
+            background: #3f839c;
+            font-size: 1.5rem;
+            padding: 1rem 3rem;
+            margin: 1rem auto 0;
+            display: block;
+        }
+
+        .leaderboard-panel {
+            background: #0f2633e0;
+            border-radius: 2rem;
+            padding: 1.5rem;
+            border: 1px solid #4f7c9a;
+        }
+
+        .leaderboard-title {
+            font-size: 1.8rem;
+            color: #ffe5a3;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .leaderboard-entries {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .leaderboard-row {
+            background: #1f4055;
+            border-radius: 3rem;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.2rem;
+            border: 1px solid #7aa5c2;
+        }
+
+        .leaderboard-name {
+            font-weight: 600;
+            color: #e2f0ff;
+        }
+
+        .leaderboard-score {
+            background: gold;
+            color: #1e3c4f;
+            font-weight: 700;
+            padding: 0.2rem 1.2rem;
+            border-radius: 3rem;
+        }
+
+        .empty-leaderboard {
+            color: #a0bedb;
+            font-style: italic;
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .final-score-message {
+            font-size: 2rem;
+            text-align: center;
+            color: #ffdb8e;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <!-- SETUP PANEL (visible at start) -->
+    <div id="setupPanel" class="panel setup-panel">
+        <div class="input-group">
+            <label>👤 Your name</label>
+            <input type="text" id="playerName" value="Guest" maxlength="20" placeholder="Enter name">
+        </div>
+        <div class="input-group">
+            <label>📚 Category</label>
+            <select id="categorySelect">
+                <option value="general">🌟 General Knowledge</option>
+                <option value="science">🔬 Science</option>
+                <option value="history">🏛️ History</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>⚡ Difficulty</label>
+            <select id="difficultySelect">
+                <option value="easy">🍃 Easy</option>
+                <option value="medium">⚙️ Medium</option>
+                <option value="hard">🗻 Hard</option>
+            </select>
+        </div>
+        <button class="btn" id="startGameBtn">▶ Start trivia</button>
+    </div>
+
+    <!-- GAME PANEL (hidden until start) -->
+    <div id="gamePanel" class="panel" style="display: none;">
+        <div class="game-header">
+            <span class="badge" id="categoryBadge">General</span>
+            <span class="badge" id="difficultyBadge">Easy</span>
+            <span class="badge" id="scoreDisplay">🏆 0</span>
+            <span class="timer" id="timerDisplay">15s</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="timerProgress" style="width: 100%;"></div>
+        </div>
+        <div id="questionCounter" class="badge" style="margin-bottom: 0.5rem;">Question 1/5</div>
+        <div class="question-text" id="questionText">Loading question...</div>
+        <div class="options-grid" id="optionsContainer"></div>
+        <button class="btn next-btn" id="nextBtn" style="display: none;">➡️ Next</button>
+    </div>
+
+    <!-- LEADERBOARD (always visible) -->
+    <div class="leaderboard-panel">
+        <div class="leaderboard-title">🏆 Leaderboard <span style="font-size: 1rem;">(top 5)</span></div>
+        <div id="leaderboardList" class="leaderboard-entries">
+            <div class="empty-leaderboard">No scores yet. Play a game!</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- QUESTION BANK (local, static) ----------
+        const questions = {
+            general: {
+                easy: [
+                    { question: "What is the capital of France?", options: ["Berlin", "Madrid", "Paris", "Rome"], correct: "Paris" },
+                    { question: "Which planet is known as the Red Planet?", options: ["Venus", "Mars", "Jupiter", "Saturn"], correct: "Mars" },
+                    { question: "Who painted the Mona Lisa?", options: ["Van Gogh", "Picasso", "Da Vinci", "Rembrandt"], correct: "Da Vinci" },
+                    { question: "What is the largest ocean on Earth?", options: ["Atlantic", "Indian", "Arctic", "Pacific"], correct: "Pacific" },
+                    { question: "How many continents are there?", options: ["5", "6", "7", "8"], correct: "7" }
+                ],
+                medium: [
+                    { question: "What is the smallest prime number?", options: ["0", "1", "2", "3"], correct: "2" },
+                    { question: "Who wrote '1984'?", options: ["Huxley", "Orwell", "Bradbury", "Kafka"], correct: "Orwell" },
+                    { question: "Which element has chemical symbol 'O'?", options: ["Gold", "Oxygen", "Osmium", "Oganesson"], correct: "Oxygen" },
+                    { question: "What year did the Titanic sink?", options: ["1912", "1905", "1898", "1921"], correct: "1912" },
+                    { question: "Which country hosted the 2016 Olympics?", options: ["China", "Brazil", "UK", "Greece"], correct: "Brazil" }
+                ],
+                hard: [
+                    { question: "Who discovered penicillin?", options: ["Fleming", "Curie", "Pasteur", "Einstein"], correct: "Fleming" },
+                    { question: "What is the rarest blood type?", options: ["AB-", "O-", "B+", "AB+"], correct: "AB-" },
+                    { question: "Which philosopher wrote 'Thus Spoke Zarathustra'?", options: ["Kant", "Nietzsche", "Hegel", "Schopenhauer"], correct: "Nietzsche" },
+                    { question: "What is the longest river in the world?", options: ["Amazon", "Nile", "Yangtze", "Mississippi"], correct: "Nile" },
+                    { question: "Which year did the Berlin Wall fall?", options: ["1987", "1989", "1991", "1985"], correct: "1989" }
+                ]
+            },
+            science: {
+                easy: [
+                    { question: "What is H2O commonly known as?", options: ["Salt", "Water", "Oxygen", "Hydrogen"], correct: "Water" },
+                    { question: "Which gas do plants absorb from the atmosphere?", options: ["Oxygen", "CO2", "Nitrogen", "Helium"], correct: "CO2" },
+                    { question: "What is the hardest natural substance?", options: ["Iron", "Diamond", "Platinum", "Titanium"], correct: "Diamond" },
+                    { question: "How many bones in adult human body?", options: ["206", "198", "210", "192"], correct: "206" },
+                    { question: "What planet is closest to the sun?", options: ["Venus", "Mercury", "Earth", "Mars"], correct: "Mercury" }
+                ],
+                medium: [
+                    { question: "What is the atomic number of Carbon?", options: ["4", "6", "8", "12"], correct: "6" },
+                    { question: "Which blood cells carry oxygen?", options: ["White", "Red", "Platelets", "Plasma"], correct: "Red" },
+                    { question: "What is the speed of light approx? (km/s)", options: ["300,000", "150,000", "1,000,000", "30,000"], correct: "300,000" },
+                    { question: "Which vitamin is produced by sunlight?", options: ["A", "B12", "C", "D"], correct: "D" },
+                    { question: "What is the largest organ in human body?", options: ["Heart", "Liver", "Skin", "Lungs"], correct: "Skin" }
+                ],
+                hard: [
+                    { question: "Who proposed the theory of relativity?", options: ["Newton", "Galileo", "Einstein", "Hawking"], correct: "Einstein" },
+                    { question: "What is the most abundant gas in Earth's atmosphere?", options: ["Oxygen", "CO2", "Nitrogen", "Argon"], correct: "Nitrogen" },
+                    { question: "Which particle has a negative charge?", options: ["Proton", "Neutron", "Electron", "Positron"], correct: "Electron" },
+                    { question: "What is the pH of pure water?", options: ["5", "7", "9", "12"], correct: "7" },
+                    { question: "Which element has the highest melting point?", options: ["Tungsten", "Carbon", "Iron", "Platinum"], correct: "Tungsten" }
+                ]
+            },
+            history: {
+                easy: [
+                    { question: "Who was the first US president?", options: ["Adams", "Jefferson", "Washington", "Lincoln"], correct: "Washington" },
+                    { question: "In which year did WW2 end?", options: ["1944", "1945", "1946", "1947"], correct: "1945" },
+                    { question: "Ancient Egyptian writing is called?", options: ["Cuneiform", "Hieroglyphs", "Alphabet", "Sanskrit"], correct: "Hieroglyphs" },
+                    { question: "Who discovered America in 1492?", options: ["Magellan", "Columbus", "Vespucci", "Cook"], correct: "Columbus" },
+                    { question: "Which empire built Machu Picchu?", options: ["Aztec", "Maya", "Inca", "Olmec"], correct: "Inca" }
+                ],
+                medium: [
+                    { question: "The Magna Carta was signed in which year?", options: ["1215", "1315", "1415", "1515"], correct: "1215" },
+                    { question: "Who was the first emperor of China?", options: ["Qin Shi Huang", "Kublai Khan", "Sun Yat-sen", "Mao"], correct: "Qin Shi Huang" },
+                    { question: "Which war was fought between the North and South in the US?", options: ["Revolution", "Civil War", "WW1", "Vietnam"], correct: "Civil War" },
+                    { question: "Who was the British prime minister during WW2?", options: ["Churchill", "Chamberlain", "Thatcher", "Attlee"], correct: "Churchill" },
+                    { question: "The French Revolution started in which year?", options: ["1789", "1799", "1776", "1804"], correct: "1789" }
+                ],
+                hard: [
+                    { question: "Who was the first Mughal emperor?", options: ["Akbar", "Babur", "Shah Jahan", "Aurangzeb"], correct: "Babur" },
+                    { question: "Which ancient city was destroyed by Vesuvius?", options: ["Rome", "Pompeii", "Athens", "Troy"], correct: "Pompeii" },
+                    { question: "The Hundred Years' War was between which two countries?", options: ["England & France", "Spain & Portugal", "Germany & Italy", "Rome & Carthage"], correct: "England & France" },
+                    { question: "Who was the first woman to win a Nobel Prize?", options: ["Curie", "Mayer", "Hodgkin", "Sklodowska"], correct: "Curie" },
+                    { question: "In which year did the Berlin Wall fall?", options: ["1989", "1987", "1990", "1985"], correct: "1989" }
+                ]
+            }
+        };
+
+        // ---------- DOM elements ----------
+        const setupPanel = document.getElementById('setupPanel');
+        const gamePanel = document.getElementById('gamePanel');
+        const playerNameInput = document.getElementById('playerName');
+        const categorySelect = document.getElementById('categorySelect');
+        const difficultySelect = document.getElementById('difficultySelect');
+        const startBtn = document.getElementById('startGameBtn');
+        const categoryBadge = document.getElementById('categoryBadge');
+        const difficultyBadge = document.getElementById('difficultyBadge');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerProgress = document.getElementById('timerProgress');
+        const questionCounter = document.getElementById('questionCounter');
+        const questionText = document.getElementById('questionText');
+        const optionsContainer = document.getElementById('optionsContainer');
+        const nextBtn = document.getElementById('nextBtn');
+        const leaderboardList = document.getElementById('leaderboardList');
+
+        // ---------- Game state ----------
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let timerInterval = null;
+        let timerSeconds = 15;
+        let maxTimer = 15;
+        let canAnswer = true; // block multiple answers
+        let gameActive = false;
+        let selectedCategory = 'general';
+        let selectedDifficulty = 'easy';
+        let playerName = 'Guest';
+
+        // ---------- Leaderboard functions (localStorage) ----------
+        function loadLeaderboard() {
+            const stored = localStorage.getItem('triviaLeaderboard');
+            if (stored) {
+                try {
+                    return JSON.parse(stored);
+                } catch (e) {
+                    return [];
+                }
+            }
+            return [];
+        }
+
+        function saveLeaderboard(leaderboard) {
+            localStorage.setItem('triviaLeaderboard', JSON.stringify(leaderboard));
+        }
+
+        function addScoreToLeaderboard(name, score) {
+            const leaderboard = loadLeaderboard();
+            const entry = { name: name.trim() || 'Guest', score: score, date: new Date().toLocaleDateString() };
+            leaderboard.push(entry);
+            // sort by score desc, keep top 5 (or all)
+            leaderboard.sort((a, b) => b.score - a.score);
+            const top5 = leaderboard.slice(0, 5);
+            saveLeaderboard(top5);
+            renderLeaderboard();
+        }
+
+        function renderLeaderboard() {
+            const leaderboard = loadLeaderboard();
+            if (leaderboard.length === 0) {
+                leaderboardList.innerHTML = `<div class="empty-leaderboard">No scores yet. Play a game!</div>`;
+                return;
+            }
+            let html = '';
+            leaderboard.forEach((entry, idx) => {
+                html += `
+                    <div class="leaderboard-row">
+                        <span class="leaderboard-name">${idx+1}. ${entry.name}</span>
+                        <span class="leaderboard-score">${entry.score}</span>
+                    </div>
+                `;
+            });
+            leaderboardList.innerHTML = html;
+        }
+
+        // initial render
+        renderLeaderboard();
+
+        // ---------- Timer management ----------
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function startTimer(seconds, onTimeout) {
+            stopTimer();
+            timerSeconds = seconds;
+            maxTimer = seconds;
+            updateTimerDisplay();
+
+            timerInterval = setInterval(() => {
+                timerSeconds -= 0.1;
+                if (timerSeconds <= 0) {
+                    timerSeconds = 0;
+                    updateTimerDisplay();
+                    stopTimer();
+                    onTimeout();
+                } else {
+                    updateTimerDisplay();
+                }
+            }, 100);
+        }
+
+        function updateTimerDisplay() {
+            timerDisplay.innerText = Math.ceil(timerSeconds) + 's';
+            const percent = (timerSeconds / maxTimer) * 100;
+            timerProgress.style.width = Math.max(0, percent) + '%';
+            if (timerSeconds <= 3) {
+                timerDisplay.style.color = '#ffa4a4';
+            } else {
+                timerDisplay.style.color = '#fff3b3';
+            }
+        }
+
+        // ---------- Load questions based on selections ----------
+        function loadQuestions(category, difficulty) {
+            return questions[category][difficulty] || [];
+        }
+
+        // ---------- Render current question ----------
+        function renderQuestion() {
+            if (!gameActive || currentIndex >= currentQuestions.length) return;
+
+            const q = currentQuestions[currentIndex];
+            questionText.innerText = q.question;
+            questionCounter.innerText = `Question ${currentIndex+1}/${currentQuestions.length}`;
+
+            // create option buttons
+            optionsContainer.innerHTML = '';
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.setAttribute('data-option', opt);
+                btn.addEventListener('click', (e) => handleAnswerClick(e, q.correct));
+                optionsContainer.appendChild(btn);
+            });
+
+            canAnswer = true;
+            // hide next button initially
+            nextBtn.style.display = 'none';
+            // start timer
+            startTimer(15, () => {
+                if (gameActive && canAnswer) {
+                    // timeout: treat as wrong, disable all, show next
+                    disableOptions();
+                    canAnswer = false;
+                    // optional visual feedback for timeout
+                    nextBtn.style.display = 'block';
+                }
+            });
+        }
+
+        function disableOptions() {
+            document.querySelectorAll('.option-btn').forEach(btn => {
+                btn.disabled = true;
+            });
+        }
+
+        function handleAnswerClick(e, correctAnswer) {
+            if (!canAnswer) return;
+            const clickedBtn = e.currentTarget;
+            const selected = clickedBtn.getAttribute('data-option');
+
+            // stop timer immediately
+            stopTimer();
+            canAnswer = false;
+
+            // disable all options
+            disableOptions();
+
+            // check correctness
+            const isCorrect = (selected === correctAnswer);
+            if (isCorrect) {
+                score += 10;
+                scoreDisplay.innerText = `🏆 ${score}`;
+                // correct animation
+                clickedBtn.classList.add('correct-animation');
+            } else {
+                // wrong animation
+                clickedBtn.classList.add('wrong-animation');
+                // also highlight correct answer (optional)
+                document.querySelectorAll('.option-btn').forEach(btn => {
+                    if (btn.getAttribute('data-option') === correctAnswer) {
+                        btn.classList.add('correct-animation');
+                    }
+                });
+            }
+
+            // show next button
+            nextBtn.style.display = 'block';
+        }
+
+        // ---------- Next question or finish ----------
+        function goToNext() {
+            stopTimer();
+            currentIndex++;
+            if (currentIndex < currentQuestions.length) {
+                renderQuestion();
+            } else {
+                // game finished
+                gameActive = false;
+                // show final message and update leaderboard
+                questionText.innerText = `✨ Game Over! Your final score: ${score}`;
+                optionsContainer.innerHTML = '';
+                nextBtn.style.display = 'none';
+                questionCounter.innerText = `Completed!`;
+                // add score to leaderboard
+                addScoreToLeaderboard(playerName, score);
+
+                // enable setup again (maybe show restart)
+                setupPanel.style.display = 'flex';
+                gamePanel.style.display = 'none';
+            }
+        }
+
+        // ---------- Start game ----------
+        function startGame() {
+            // get values
+            playerName = playerNameInput.value.trim() || 'Guest';
+            selectedCategory = categorySelect.value;
+            selectedDifficulty = difficultySelect.value;
+            // load questions
+            currentQuestions = loadQuestions(selectedCategory, selectedDifficulty);
+            if (!currentQuestions || currentQuestions.length === 0) {
+                alert('No questions for this category/difficulty.');
+                return;
+            }
+
+            // reset state
+            currentIndex = 0;
+            score = 0;
+            gameActive = true;
+            scoreDisplay.innerText = `🏆 0`;
+            // update badges
+            categoryBadge.innerText = categorySelect.selectedOptions[0].text.split(' ')[1] || selectedCategory;
+            difficultyBadge.innerText = difficultySelect.selectedOptions[0].text.split(' ')[0] || selectedDifficulty;
+
+            // hide setup, show game
+            setupPanel.style.display = 'none';
+            gamePanel.style.display = 'block';
+
+            // render first question
+            renderQuestion();
+        }
+
+        // ---------- Event listeners ----------
+        startBtn.addEventListener('click', startGame);
+
+        nextBtn.addEventListener('click', () => {
+            if (gameActive) {
+                goToNext();
+            }
+        });
+
+        // if user tries to start again while game active? fine.
+
+        // initial: ensure game panel hidden
+        gamePanel.style.display = 'none';
+
+        // For smoothness, disable next if no question
+    })();
+</script>
+</body>
+</html>

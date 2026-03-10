@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LogoCraft — SVG Logo Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface2: #1e1e24;
+    --border: #2a2a35;
+    --accent: #e8ff47;
+    --accent2: #ff6b47;
+    --text: #f0f0f5;
+    --muted: #6b6b80;
+    --canvas-bg: #1a1a20;
+  }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .logo-brand {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.25rem;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+  }
+  .logo-brand span { color: var(--muted); font-weight: 400; }
+  .header-actions { display: flex; gap: 10px; }
+
+  /* ── LAYOUT ── */
+  .app {
+    display: grid;
+    grid-template-columns: 320px 1fr 280px;
+    height: calc(100vh - 61px);
+    overflow: hidden;
+  }
+
+  /* ── PANELS ── */
+  .panel {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .panel:last-child { border-right: none; border-left: 1px solid var(--border); }
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .section { margin-bottom: 24px; }
+  .section-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  /* ── INPUTS ── */
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+  }
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  input[type="color"] {
+    width: 36px; height: 36px;
+    border: none; border-radius: 6px;
+    cursor: pointer; background: none;
+    padding: 0;
+  }
+
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row label { font-size: 0.75rem; color: var(--muted); white-space: nowrap; min-width: 60px; }
+
+  /* ── ICON GRID ── */
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+  .icon-btn {
+    aspect-ratio: 1;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--muted);
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); transform: scale(1.05); }
+  .icon-btn.active { border-color: var(--accent); background: rgba(232,255,71,0.08); color: var(--accent); }
+  .icon-btn svg { width: 20px; height: 20px; }
+
+  /* ── SHAPE GRID ── */
+  .shape-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .shape-btn {
+    padding: 8px 6px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .shape-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .shape-btn.active { border-color: var(--accent2); background: rgba(255,107,71,0.08); color: var(--accent2); }
+
+  /* ── CANVAS AREA ── */
+  .canvas-wrap {
+    background: var(--canvas-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .canvas-wrap::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+  }
+
+  #logo-stage {
+    position: relative;
+    z-index: 1;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+  }
+
+  .canvas-controls {
+    position: relative; z-index: 1;
+    display: flex; gap: 10px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    padding: 9px 18px;
+    border-radius: 7px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    letter-spacing: 0.05em;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: #0d0d0f;
+  }
+  .btn-primary:hover { background: #f5ff7a; transform: translateY(-1px); }
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger {
+    background: transparent;
+    color: var(--accent2);
+    border: 1.5px solid var(--accent2);
+    padding: 6px 12px;
+    font-size: 0.7rem;
+  }
+  .btn-danger:hover { background: rgba(255,107,71,0.1); }
+
+  /* ── LAYOUT PICKER ── */
+  .layout-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .layout-btn {
+    aspect-ratio: 1.5;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .layout-btn:hover { border-color: var(--muted); }
+  .layout-btn.active { border-color: var(--accent); }
+  .layout-btn svg { width: 32px; height: 32px; opacity: 0.6; }
+  .layout-btn.active svg { opacity: 1; color: var(--accent); }
+
+  /* ── COLOR PRESETS ── */
+  .preset-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .preset-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .preset-dot:hover, .preset-dot.active { border-color: var(--text); transform: scale(1.1); }
+
+  /* ── HISTORY / EXPORT PANEL ── */
+  .export-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .export-block h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.8rem;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .export-block p { font-size: 0.7rem; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+
+  /* ── PREVIEW THUMBNAILS ── */
+  .preview-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .preview-tile {
+    width: 72px; height: 72px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.6rem;
+    color: var(--muted);
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .preview-tile span { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font-size: 0.55rem; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  select option { background: var(--surface2); }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+  
+  /* range value display */
+  .range-row { display: flex; align-items: center; gap: 8px; }
+  .range-row input[type="range"] { flex: 1; }
+  .range-val { font-size: 0.7rem; color: var(--accent); min-width: 30px; text-align: right; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-brand">Logo<span>Craft</span></div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="resetAll()">↺ Reset</button>
+    <button class="btn btn-primary" onclick="downloadSVG()">↓ SVG</button>
+    <button class="btn btn-primary" style="background:var(--accent2);color:#fff" onclick="downloadPNG()">↓ PNG</button>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- LEFT PANEL: Icon & Layout -->
+  <div class="panel">
+    <div class="panel-title">Icon & Layout</div>
+
+    <div class="section">
+      <span class="section-label">Icon Shape</span>
+      <div class="icon-grid" id="icon-grid"></div>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Container Shape</span>
+      <div class="shape-grid" id="shape-grid">
+        <div class="shape-btn active" data-shape="none" onclick="setShape(this,'none')">None</div>
+        <div class="shape-btn" data-shape="circle" onclick="setShape(this,'circle')">Circle</div>
+        <div class="shape-btn" data-shape="square" onclick="setShape(this,'square')">Square</div>
+        <div class="shape-btn" data-shape="rounded" onclick="setShape(this,'rounded')">Rounded</div>
+        <div class="shape-btn" data-shape="hexagon" onclick="setShape(this,'hexagon')">Hexagon</div>
+        <div class="shape-btn" data-shape="diamond" onclick="setShape(this,'diamond')">Diamond</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Layout</span>
+      <div class="layout-grid" id="layout-grid">
+        <div class="layout-btn active" data-layout="icon-left" onclick="setLayout(this,'icon-left')" title="Icon Left">
+          <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="8" width="8" height="8" rx="2"/><line x1="15" y1="12" x2="37" y2="12"/>
+          </svg>
+        </div>
+        <div class="layout-btn" data-layout="icon-top" onclick="setLayout(this,'icon-top')" title="Icon Top">
+          <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="16" y="2" width="8" height="8" rx="2"/><line x1="4" y1="18" x2="36" y2="18"/>
+          </svg>
+        </div>
+        <div class="layout-btn" data-layout="icon-only" onclick="setLayout(this,'icon-only')" title="Icon Only">
+          <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="13" y="5" width="14" height="14" rx="3"/>
+          </svg>
+        </div>
+        <div class="layout-btn" data-layout="text-only" onclick="setLayout(this,'text-only')" title="Text Only">
+          <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="9" x2="36" y2="9"/><line x1="9" y1="15" x2="31" y2="15"/>
+          </svg>
+        </div>
+        <div class="layout-btn" data-layout="icon-right" onclick="setLayout(this,'icon-right')" title="Icon Right">
+          <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="29" y="8" width="8" height="8" rx="2"/><line x1="3" y1="12" x2="25" y2="12"/>
+          </svg>
+        </div>
+        <div class="layout-btn" data-layout="stacked" onclick="setLayout(this,'stacked')" title="Stacked">
+          <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="16" y="3" width="8" height="8" rx="2"/>
+            <line x1="6" y1="17" x2="34" y2="17"/>
+            <line x1="12" y1="21" x2="28" y2="21"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Icon Size</span>
+      <div class="range-row">
+        <input type="range" id="icon-size" min="20" max="100" value="48" oninput="updateLogo();document.getElementById('icon-size-val').textContent=this.value">
+        <span class="range-val" id="icon-size-val">48</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Icon Rotation</span>
+      <div class="range-row">
+        <input type="range" id="icon-rotate" min="0" max="360" value="0" oninput="updateLogo();document.getElementById('icon-rotate-val').textContent=this.value+'°'">
+        <span class="range-val" id="icon-rotate-val">0°</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Gap / Spacing</span>
+      <div class="range-row">
+        <input type="range" id="gap" min="0" max="40" value="12" oninput="updateLogo();document.getElementById('gap-val').textContent=this.value">
+        <span class="range-val" id="gap-val">12</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CENTER: Canvas -->
+  <div class="canvas-wrap">
+    <div id="logo-stage"></div>
+    <div class="canvas-controls">
+      <button class="btn btn-secondary" onclick="setCanvasBg('transparent')">Transparent</button>
+      <button class="btn btn-secondary" onclick="setCanvasBg('#ffffff')">White BG</button>
+      <button class="btn btn-secondary" onclick="setCanvasBg('#0d0d0f')">Dark BG</button>
+      <label class="btn btn-secondary" style="cursor:pointer">
+        Custom BG <input type="color" id="canvas-color" value="#0d0d0f" oninput="setCanvasBg(this.value)" style="display:none">
+      </label>
+    </div>
+    <!-- Size selector -->
+    <div style="display:flex;gap:8px;position:relative;z-index:1">
+      <select id="canvas-size" onchange="updateCanvasSize()" style="width:auto;padding:6px 10px">
+        <option value="400x200">400 × 200</option>
+        <option value="600x300" selected>600 × 300</option>
+        <option value="800x400">800 × 400</option>
+        <option value="500x500">500 × 500 (Square)</option>
+        <option value="800x200">800 × 200 (Banner)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: Typography & Colors -->
+  <div class="panel">
+    <div class="panel-title">Typography & Color</div>
+
+    <div class="section">
+      <span class="section-label">Company Name</span>
+      <input type="text" id="brand-name" value="BrandCo" oninput="updateLogo()" maxlength="30"/>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Tagline</span>
+      <input type="text" id="tagline" value="Innovate Forward" oninput="updateLogo()" maxlength="40"/>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Font</span>
+      <select id="font" onchange="updateLogo()">
+        <option value="'Syne', sans-serif">Syne (Bold)</option>
+        <option value="'DM Mono', monospace">DM Mono</option>
+        <option value="Georgia, serif">Georgia (Serif)</option>
+        <option value="Impact, sans-serif">Impact</option>
+        <option value="'Courier New', monospace">Courier New</option>
+        <option value="'Arial Narrow', sans-serif">Arial Narrow</option>
+        <option value="Verdana, sans-serif">Verdana</option>
+        <option value="Tahoma, sans-serif">Tahoma</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Name Size</span>
+      <div class="range-row">
+        <input type="range" id="name-size" min="14" max="80" value="36" oninput="updateLogo();document.getElementById('name-size-val').textContent=this.value">
+        <span class="range-val" id="name-size-val">36</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Letter Spacing</span>
+      <div class="range-row">
+        <input type="range" id="letter-spacing" min="-5" max="20" value="0" oninput="updateLogo();document.getElementById('ls-val').textContent=this.value">
+        <span class="range-val" id="ls-val">0</span>
+      </div>
+    </div>
+
+    <div class="section">
+      <span class="section-label">Text Transform</span>
+      <select id="text-transform" onchange="updateLogo()">
+        <option value="none">Default</option>
+        <option value="uppercase">UPPERCASE</option>
+        <option value="lowercase">lowercase</option>
+        <option value="capitalize">Capitalize</option>
+      </select>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
+      <span class="section-label">Color Presets</span>
+      <div class="preset-grid" id="preset-grid"></div>
+    </div>
+
+    <div class="section">
+      <div class="row" style="justify-content:space-between">
+        <div style="flex:1">
+          <span class="section-label">Icon Color</span>
+          <input type="color" id="icon-color" value="#e8ff47" oninput="updateLogo()">
+        </div>
+        <div style="flex:1">
+          <span class="section-label">Text Color</span>
+          <input type="color" id="text-color" value="#f0f0f5" oninput="updateLogo()">
+        </div>
+        <div style="flex:1">
+          <span class="section-label">Container</span>
+          <input type="color" id="container-color" value="#1e1e24" oninput="updateLogo()">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="row">
+        <label>Tagline color</label>
+        <input type="color" id="tagline-color" value="#6b6b80" oninput="updateLogo()">
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section">
+      <span class="section-label">Export</span>
+      <div class="export-block">
+        <h4>SVG Vector</h4>
+        <p>Scalable, editable — perfect for print and web.</p>
+        <button class="btn btn-primary" style="width:100%" onclick="downloadSVG()">Download SVG</button>
+      </div>
+      <div class="export-block">
+        <h4>PNG Raster</h4>
+        <p>High-res bitmap at 2× scale for web use.</p>
+        <button class="btn btn-primary" style="width:100%;background:var(--accent2);color:#fff" onclick="downloadPNG()">Download PNG</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── STATE ──
+const state = {
+  icon: 'star',
+  shape: 'none',
+  layout: 'icon-left',
+  canvasBg: '#0d0d0f',
+  canvasW: 600,
+  canvasH: 300,
+};
+
+// ── ICONS (SVG path data, viewBox 0 0 24 24) ──
+const ICONS = {
+  star:    { d: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z', fill: true },
+  bolt:    { d: 'M13 2L3 14h9l-1 8 10-12h-9l1-8z', fill: true },
+  gem:     { d: 'M6 3h12l4 6-10 13L2 9l4-6z', fill: true },
+  flame:   { d: 'M12 2c0 0-7 6-7 12a7 7 0 0014 0c0-4-3-7-7-12zm0 0c1 3 4 5 4 9a4 4 0 01-8 0c0-4 4-9 4-9z', fill: true },
+  leaf:    { d: 'M2 21c3-6 8-10 14-10-2 4-5 8-14 10zm14-10c0-5-4-9-9-9 0 5 4 9 9 9z', fill: true },
+  atom:    { d: 'M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0M12 2c2.8 0 5 4.5 5 10s-2.2 10-5 10-5-4.5-5-10 2.2-10 5-10zM2 12c0-2.8 4.5-5 10-5s10 2.2 10 5-4.5 5-10 5-10-2.2-10-5z', fill: false },
+  crown:   { d: 'M2 19l3-10 4 5 3-8 3 8 4-5 3 10H2z', fill: true },
+  rocket:  { d: 'M9 22c0 0-4-4-4-10C5 6 8 2 12 2s7 4 7 10c0 6-4 10-4 10H9zm3-14a2 2 0 100 4 2 2 0 000-4z', fill: true },
+  eye:     { d: 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8zm11-3a3 3 0 100 6 3 3 0 000-6z', fill: false },
+  cube:    { d: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5', fill: false },
+  wave:    { d: 'M2 12c1.5-4 3.5-6 5-6s3.5 2 5 6 3.5 6 5 6 3.5-2 5-6', fill: false },
+  diamond2:{ d: 'M12 2l5 8H7l5-8zM7 10l5 12 5-12H7z', fill: true },
+  cloud:   { d: 'M17.5 19H9a7 7 0 110-14c.93 0 1.8.18 2.6.5A7.5 7.5 0 0122 12.5c0 3.59-2.91 6.5-6.5 6.5z', fill: true },
+  layers:  { d: 'M12 2L2 7l10 5 10-5-10-5zM2 12l10 5 10-5M2 17l10 5 10-5', fill: false },
+  hexagon: { d: 'M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z', fill: false },
+  target:  { d: 'M12 22a10 10 0 100-20 10 10 0 000 20zm0-6a4 4 0 100-8 4 4 0 000 8zm0-2a2 2 0 100-4 2 2 0 000 4z', fill: true },
+  code:    { d: 'M16 18l6-6-6-6M8 6l-6 6 6 6', fill: false },
+  shield:  { d: 'M12 2l7 4v5c0 5-3.5 9.74-7 11-3.5-1.26-7-6-7-11V6l7-4z', fill: true },
+  infinity:{ d: 'M12 12c-2-2.5-4-4-6-4a4 4 0 000 8c2 0 4-1.5 6-4zm0 0c2 2.5 4 4 6 4a4 4 0 000-8c-2 0-4 1.5-6 4z', fill: false },
+  zap2:    { d: 'M4 14h7l-2 8 11-12h-7l2-8L4 14z', fill: true },
+};
+
+// ── COLOR PRESETS ──
+const COLOR_PRESETS = [
+  { icon: '#e8ff47', text: '#f0f0f5', container: '#1a1a20', tagline: '#6b6b80', label: 'Neon Night' },
+  { icon: '#ff6b47', text: '#fff5f0', container: '#2a1a16', tagline: '#a06050', label: 'Ember' },
+  { icon: '#47d4ff', text: '#f0faff', container: '#0d1e2a', tagline: '#5080a0', label: 'Arctic' },
+  { icon: '#b47fff', text: '#f5f0ff', container: '#1a0d2a', tagline: '#8060a0', label: 'Violet' },
+  { icon: '#47ffb4', text: '#f0fff5', container: '#0d2a1a', tagline: '#40a070', label: 'Mint' },
+  { icon: '#ffd447', text: '#1a1200', container: '#fff9e0', tagline: '#a09040', label: 'Gold' },
+  { icon: '#ff4794', text: '#fff0f7', container: '#2a0d1a', tagline: '#a04070', label: 'Rose' },
+  { icon: '#ffffff', text: '#ffffff', container: '#222226', tagline: '#888898', label: 'Monochrome' },
+  { icon: '#ff8c00', text: '#1a0e00', container: '#fff3e0', tagline: '#a06020', label: 'Sunrise' },
+  { icon: '#00e5ff', text: '#002030', container: '#e0faff', tagline: '#208090', label: 'Sky' },
+];
+
+// ── INIT ──
+function init() {
+  // Build icon grid
+  const grid = document.getElementById('icon-grid');
+  Object.keys(ICONS).forEach((name, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'icon-btn' + (name === 'star' ? ' active' : '');
+    btn.title = name;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="${ICONS[name].fill ? 'currentColor' : 'none'}" stroke="${ICONS[name].fill ? 'none' : 'currentColor'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="${ICONS[name].d}"/></svg>`;
+    btn.onclick = () => {
+      document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.icon = name;
+      updateLogo();
+    };
+    grid.appendChild(btn);
+  });
+
+  // Build color presets
+  const presetGrid = document.getElementById('preset-grid');
+  COLOR_PRESETS.forEach((p, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'preset-dot' + (i === 0 ? ' active' : '');
+    dot.title = p.label;
+    dot.style.background = `linear-gradient(135deg, ${p.icon}, ${p.container})`;
+    dot.onclick = () => {
+      document.querySelectorAll('.preset-dot').forEach(d => d.classList.remove('active'));
+      dot.classList.add('active');
+      document.getElementById('icon-color').value = p.icon;
+      document.getElementById('text-color').value = p.text;
+      document.getElementById('container-color').value = p.container;
+      document.getElementById('tagline-color').value = p.tagline;
+      updateLogo();
+    };
+    presetGrid.appendChild(dot);
+  });
+
+  updateCanvasSize();
+  updateLogo();
+}
+
+function setShape(el, shape) {
+  document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  state.shape = shape;
+  updateLogo();
+}
+
+function setLayout(el, layout) {
+  document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  state.layout = layout;
+  updateLogo();
+}
+
+function setCanvasBg(c) {
+  state.canvasBg = c;
+  document.getElementById('logo-stage').style.backgroundColor = c === 'transparent' ? 'transparent' : c;
+  updateLogo();
+}
+
+function updateCanvasSize() {
+  const val = document.getElementById('canvas-size').value;
+  const [w, h] = val.split('x').map(Number);
+  state.canvasW = w; state.canvasH = h;
+  updateLogo();
+}
+
+// ── MAIN RENDER ──
+function buildSVG(w, h, forExport = false) {
+  const iconName = state.icon;
+  const icon = ICONS[iconName];
+  const layout = state.layout;
+  const shape = state.shape;
+
+  const iconColor = document.getElementById('icon-color').value;
+  const textColor = document.getElementById('text-color').value;
+  const containerColor = document.getElementById('container-color').value;
+  const taglineColor = document.getElementById('tagline-color').value;
+  const brandName = document.getElementById('brand-name').value || 'Brand';
+  const tagline = document.getElementById('tagline').value;
+  const font = document.getElementById('font').value;
+  const nameSize = parseInt(document.getElementById('name-size').value);
+  const ls = parseInt(document.getElementById('letter-spacing').value);
+  const tt = document.getElementById('text-transform').value;
+  const iconSize = parseInt(document.getElementById('icon-size').value);
+  const iconRotate = parseInt(document.getElementById('icon-rotate').value);
+  const gap = parseInt(document.getElementById('gap').value);
+  const canvasBg = state.canvasBg;
+  const taglineSize = Math.max(10, nameSize * 0.38);
+
+  function transformText(t) {
+    if (tt === 'uppercase') return t.toUpperCase();
+    if (tt === 'lowercase') return t.toLowerCase();
+    if (tt === 'capitalize') return t.replace(/\b\w/g, c => c.toUpperCase());
+    return t;
+  }
+  const displayName = transformText(brandName);
+  const displayTag = transformText(tagline);
+
+  const cx = w / 2, cy = h / 2;
+  const pad = iconSize * 0.35;
+  const containerSize = iconSize + pad * 2;
+
+  // Icon SVG element
+  function iconEl(x, y, size, rotate) {
+    const scale = size / 24;
+    const ox = x - size/2, oy = y - size/2;
+    const fillAttr = icon.fill ? `fill="${iconColor}"` : `fill="none" stroke="${iconColor}" stroke-width="${1.8/scale}" stroke-linecap="round" stroke-linejoin="round"`;
+    return `<g transform="translate(${ox},${oy}) scale(${scale}) rotate(${rotate},12,12)"><path d="${icon.d}" ${fillAttr}/></g>`;
+  }
+
+  // Container element
+  function containerEl(x, y, size, shape) {
+    if (shape === 'none') return '';
+    if (shape === 'circle') return `<circle cx="${x}" cy="${y}" r="${size/2}" fill="${containerColor}"/>`;
+    if (shape === 'square') return `<rect x="${x-size/2}" y="${y-size/2}" width="${size}" height="${size}" fill="${containerColor}"/>`;
+    if (shape === 'rounded') return `<rect x="${x-size/2}" y="${y-size/2}" width="${size}" height="${size}" rx="${size*0.2}" fill="${containerColor}"/>`;
+    if (shape === 'hexagon') {
+      const r = size/2;
+      const pts = Array.from({length:6},(_,i)=>{
+        const a = Math.PI/180*(60*i-30);
+        return `${x+r*Math.cos(a)},${y+r*Math.sin(a)}`;
+      }).join(' ');
+      return `<polygon points="${pts}" fill="${containerColor}"/>`;
+    }
+    if (shape === 'diamond') {
+      const r = size/2;
+      return `<polygon points="${x},${y-r} ${x+r},${y} ${x},${y+r} ${x-r},${y}" fill="${containerColor}"/>`;
+    }
+    return '';
+  }
+
+  // Text block
+  function textBlock(x, y, anchor) {
+    const lsStr = ls !== 0 ? `letter-spacing="${ls}"` : '';
+    const tagEl = displayTag ? `<text x="${x}" y="${y + nameSize * 0.3 + taglineSize + 2}" font-family="${font}" font-size="${taglineSize}" fill="${taglineColor}" text-anchor="${anchor}" ${lsStr}>${displayTag}</text>` : '';
+    return `<text x="${x}" y="${y}" font-family="${font}" font-size="${nameSize}" font-weight="700" fill="${textColor}" text-anchor="${anchor}" ${lsStr}>${displayName}</text>${tagEl}`;
+  }
+
+  let elements = '';
+  const bgEl = (canvasBg !== 'transparent') ? `<rect width="${w}" height="${h}" fill="${canvasBg}"/>` : '';
+
+  if (layout === 'icon-left') {
+    const totalW = (layout !== 'icon-only' ? containerSize : 0);
+    const iconX = cx - (nameSize * displayName.length * 0.3 + gap + containerSize) / 2 + containerSize/2;
+    const iconY = cy;
+    const textX = iconX + containerSize/2 + gap;
+    elements = containerEl(iconX, iconY, containerSize, shape) + iconEl(iconX, iconY, iconSize, iconRotate) + textBlock(textX, cy + nameSize * 0.35, 'start');
+  } else if (layout === 'icon-right') {
+    const textX = cx - containerSize/2 - gap/2;
+    const iconX = cx + (nameSize * displayName.length * 0.28) + gap;
+    elements = textBlock(textX, cy + nameSize * 0.35, 'end') + containerEl(iconX, cy, containerSize, shape) + iconEl(iconX, cy, iconSize, iconRotate);
+  } else if (layout === 'icon-top') {
+    const iconY = cy - nameSize/2 - gap/2;
+    const textY = cy + iconSize/2 + gap + nameSize * 0.35;
+    elements = containerEl(cx, iconY, containerSize, shape) + iconEl(cx, iconY, iconSize, iconRotate) + textBlock(cx, textY, 'middle');
+  } else if (layout === 'stacked') {
+    const iconY = cy - nameSize - gap;
+    const textY = cy + nameSize * 0.35;
+    elements = containerEl(cx, iconY, containerSize, shape) + iconEl(cx, iconY, iconSize, iconRotate) + textBlock(cx, textY, 'middle');
+  } else if (layout === 'icon-only') {
+    elements = containerEl(cx, cy, containerSize, shape) + iconEl(cx, cy, iconSize, iconRotate);
+  } else if (layout === 'text-only') {
+    elements = textBlock(cx, cy + nameSize * 0.35, 'middle');
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${bgEl}${elements}</svg>`;
+}
+
+function updateLogo() {
+  const svg = buildSVG(state.canvasW, state.canvasH);
+  const stage = document.getElementById('logo-stage');
+  stage.style.width = state.canvasW + 'px';
+  stage.style.maxWidth = '100%';
+  stage.style.height = state.canvasH + 'px';
+  stage.style.backgroundColor = state.canvasBg === 'transparent' ? 'transparent' : state.canvasBg;
+  stage.innerHTML = svg;
+  // Remove redundant bg rect since stage div handles it
+}
+
+function downloadSVG() {
+  const svg = buildSVG(state.canvasW, state.canvasH, true);
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (document.getElementById('brand-name').value || 'logo') + '.svg';
+  a.click();
+}
+
+function downloadPNG() {
+  const scale = 2;
+  const w = state.canvasW * scale, h = state.canvasH * scale;
+  const svg = buildSVG(w, h, true);
+  const img = new Image();
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (state.canvasBg !== 'transparent') {
+      ctx.fillStyle = state.canvasBg;
+      ctx.fillRect(0, 0, w, h);
+    }
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.href = canvas.toDataURL('image/png');
+    a.download = (document.getElementById('brand-name').value || 'logo') + '.png';
+    a.click();
+  };
+  img.src = url;
+}
+
+function resetAll() {
+  document.getElementById('brand-name').value = 'BrandCo';
+  document.getElementById('tagline').value = 'Innovate Forward';
+  document.getElementById('icon-size').value = 48;
+  document.getElementById('icon-size-val').textContent = 48;
+  document.getElementById('icon-rotate').value = 0;
+  document.getElementById('icon-rotate-val').textContent = '0°';
+  document.getElementById('gap').value = 12;
+  document.getElementById('gap-val').textContent = 12;
+  document.getElementById('name-size').value = 36;
+  document.getElementById('name-size-val').textContent = 36;
+  document.getElementById('letter-spacing').value = 0;
+  document.getElementById('ls-val').textContent = 0;
+  document.getElementById('font').value = "'Syne', sans-serif";
+  document.getElementById('text-transform').value = 'none';
+  document.getElementById('icon-color').value = '#e8ff47';
+  document.getElementById('text-color').value = '#f0f0f5';
+  document.getElementById('container-color').value = '#1e1e24';
+  document.getElementById('tagline-color').value = '#6b6b80';
+  document.getElementById('canvas-size').value = '600x300';
+  state.icon = 'star'; state.shape = 'none'; state.layout = 'icon-left'; state.canvasBg = '#0d0d0f'; state.canvasW = 600; state.canvasH = 300;
+  document.querySelectorAll('.icon-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.icon-btn').classList.add('active');
+  document.querySelectorAll('.shape-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-shape="none"]').classList.add('active');
+  document.querySelectorAll('.layout-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('[data-layout="icon-left"]').classList.add('active');
+  document.querySelectorAll('.preset-dot').forEach((d,i) => d.classList.toggle('active', i===0));
+  updateLogo();
+}
+
+init();
+</script>
+</body>
+</html>

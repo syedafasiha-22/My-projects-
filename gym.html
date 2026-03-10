@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FitnessFlow · gym & workout</title>
+    <!-- Font Awesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+        }
+
+        body {
+            background: #f4f7fc;
+            color: #1e2b37;
+            overflow-x: hidden;
+        }
+
+        /* smooth scroll & animations */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* ---------- NEW / ENHANCED ANIMATIONS ---------- */
+
+        /* fadeUp (existing but will be used for scroll reveal) */
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* pulse animation for CTA button */
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(240, 78, 49, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(240, 78, 49, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(240, 78, 49, 0); }
+        }
+
+        /* bounce animation for hero arrow */
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-15px); }
+            60% { transform: translateY(-7px); }
+        }
+
+        /* floating effect for exercise images */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* spin effect for plan icons on hover */
+        @keyframes spinIcon {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* glow for plan buttons */
+        @keyframes glow {
+            0% { box-shadow: 0 0 5px #f04e31; }
+            50% { box-shadow: 0 0 20px #f04e31, 0 0 30px #f04e31; }
+            100% { box-shadow: 0 0 5px #f04e31; }
+        }
+
+        /* shake for invalid BMI input (can be triggered) */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        /* scale bounce for BMI value when updated */
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); color: #f04e31; }
+            100% { transform: scale(1); }
+        }
+
+        /* animated underline for nav links */
+        .nav-links a {
+            position: relative;
+        }
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #f04e31;
+            transition: width 0.3s ease;
+        }
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* apply animations to elements (initially hidden for scroll reveal) */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .fade-up.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* existing elements now use fade-up class (added via JS) but we'll also set base */
+        section, .bmi-card, .plan-card, .exercise-item {
+            will-change: opacity, transform;
+        }
+
+        /* hero pulse button */
+        .cta-btn {
+            animation: pulse 2s infinite;
+        }
+
+        /* bounce arrow in hero (add icon) */
+        .hero .fa-arrow-down {
+            animation: bounce 2s infinite;
+            margin-left: 8px;
+        }
+
+        /* floating exercise images */
+        .exercise-item:hover .exercise-img i {
+            animation: float 1.5s ease-in-out infinite;
+        }
+
+        /* spin on plan icon hover */
+        .plan-card:hover .plan-icon i {
+            animation: spinIcon 0.8s ease-in-out;
+        }
+
+        /* glow on plan button hover */
+        .plan-btn:hover {
+            animation: glow 1.2s infinite;
+        }
+
+        /* BMI value pop when updated */
+        .bmi-value.pop {
+            animation: pop 0.3s ease;
+        }
+
+        /* invalid input shake */
+        .input-group input.invalid {
+            border-color: #f04e31;
+            animation: shake 0.4s ease;
+        }
+
+        /* navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.2rem 5%;
+            background: #ffffffdd;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #2c3e50;
+            letter-spacing: -1px;
+        }
+
+        .logo span {
+            color: #f04e31;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #2c3e50;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #f04e31;
+        }
+
+        /* hero */
+        .hero {
+            background: linear-gradient(135deg, #1e3c5f 0%, #2b4f73 100%), url('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-blend-mode: overlay;
+            background-size: cover;
+            background-position: center;
+            color: white;
+            text-align: center;
+            padding: 5rem 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 15px #00000030;
+        }
+
+        .hero p {
+            font-size: 1.4rem;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-btn {
+            background: #f04e31;
+            border: none;
+            color: white;
+            font-size: 1.3rem;
+            font-weight: 600;
+            padding: 1rem 3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 8px 20px #f04e3180;
+            border: 1px solid #ffa27b;
+        }
+
+        .cta-btn:hover {
+            background: #d43c1f;
+            transform: scale(1.03);
+        }
+
+        /* container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* section titles */
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: #1e3a5f;
+            border-left: 8px solid #f04e31;
+            padding-left: 1.5rem;
+        }
+
+        /* bmi card */
+        .bmi-card {
+            background: white;
+            border-radius: 2.5rem;
+            padding: 2.5rem;
+            box-shadow: 0 20px 35px -8px #1e3c5f30;
+            margin-bottom: 4rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            transition: transform 0.3s;
+        }
+
+        .bmi-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .bmi-left {
+            flex: 1 1 250px;
+        }
+
+        .bmi-left h3 {
+            font-size: 2rem;
+            color: #1e3a5f;
+            margin-bottom: 1rem;
+        }
+
+        .bmi-left p {
+            color: #3f5567;
+            line-height: 1.7;
+        }
+
+        .bmi-right {
+            flex: 2 1 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .input-group label {
+            font-weight: 600;
+            color: #2b4f73;
+        }
+
+        .input-group input {
+            padding: 1rem;
+            border: 2px solid #dbe2eb;
+            border-radius: 3rem;
+            font-size: 1.2rem;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #f04e31;
+        }
+
+        .bmi-result {
+            background: #eef4fa;
+            border-radius: 2rem;
+            padding: 1.2rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .bmi-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #1e3c5f;
+        }
+
+        .bmi-category {
+            background: #f04e31;
+            color: white;
+            padding: 0.5rem 2rem;
+            border-radius: 3rem;
+            font-weight: 600;
+            font-size: 1.3rem;
+        }
+
+        /* workout plans */
+        .workout-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0 4rem;
+        }
+
+        .plan-card {
+            background: white;
+            border-radius: 2rem;
+            padding: 2rem;
+            box-shadow: 0 15px 30px #1e3c5f20;
+            transition: all 0.2s;
+            text-align: center;
+            border: 1px solid #dfeaf5;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 25px 40px #f04e3140;
+            border-color: #f04e31;
+        }
+
+        .plan-icon {
+            font-size: 3.5rem;
+            color: #f04e31;
+            margin-bottom: 1.2rem;
+            display: inline-block;
+        }
+
+        .plan-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-card .level {
+            display: inline-block;
+            background: #eef4fa;
+            padding: 0.3rem 1.5rem;
+            border-radius: 30px;
+            font-weight: 600;
+            margin: 1rem 0;
+        }
+
+        .plan-card ul {
+            list-style: none;
+            text-align: left;
+            margin: 1.5rem 0;
+        }
+
+        .plan-card li {
+            padding: 0.4rem 0;
+            border-bottom: 1px dashed #c0d2e5;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .plan-card li i {
+            color: #f04e31;
+        }
+
+        .plan-btn {
+            background: #1e3c5f;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+            padding: 0.8rem 2rem;
+            border-radius: 40px;
+            margin-top: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 100%;
+        }
+
+        .plan-btn:hover {
+            background: #f04e31;
+        }
+
+        /* exercise library */
+        .library-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0 4rem;
+        }
+
+        .exercise-item {
+            background: white;
+            border-radius: 1.8rem;
+            overflow: hidden;
+            box-shadow: 0 10px 20px #00000015;
+            transition: 0.25s;
+            cursor: pointer;
+            opacity: 0;
+            animation: fadeUp 0.6s forwards;
+            animation-delay: calc(0.1s * var(--i, 0));
+        }
+
+        .exercise-item:hover {
+            transform: scale(1.02) translateY(-8px);
+            box-shadow: 0 20px 30px #f04e3150;
+        }
+
+        .exercise-img {
+            height: 180px;
+            background: #b7d0e9;
+            background-size: cover;
+            background-position: center;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 3rem;
+            text-shadow: 0 2px 10px black;
+        }
+
+        .exercise-item:nth-child(1) .exercise-img { background-image: linear-gradient( #7f8fa6, #3a506b), url('https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'); background-blend-mode: overlay; }
+        .exercise-item:nth-child(2) .exercise-img { background-image: linear-gradient( #7f8fa6, #3a506b), url('https://images.unsplash.com/photo-1599058917212-d750089bc07e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'); background-blend-mode: overlay; }
+        .exercise-item:nth-child(3) .exercise-img { background-image: linear-gradient( #7f8fa6, #3a506b), url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'); background-blend-mode: overlay; }
+        .exercise-item:nth-child(4) .exercise-img { background-image: linear-gradient( #7f8fa6, #3a506b), url('https://images.unsplash.com/photo-1581009137042-c552e485697a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'); background-blend-mode: overlay; }
+        .exercise-item:nth-child(5) .exercise-img { background-image: linear-gradient( #7f8fa6, #3a506b), url('https://images.unsplash.com/photo-1599058917212-d750089bc07e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'); background-blend-mode: overlay; }
+        .exercise-item:nth-child(6) .exercise-img { background-image: linear-gradient( #7f8fa6, #3a506b), url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'); background-blend-mode: overlay; }
+
+        .exercise-info {
+            padding: 1.5rem;
+        }
+
+        .exercise-info h4 {
+            font-size: 1.5rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .exercise-info p {
+            color: #4a627a;
+        }
+
+        /* footer */
+        .footer {
+            background: #0f2637;
+            color: white;
+            padding: 3rem 5%;
+            border-radius: 3rem 3rem 0 0;
+            margin-top: 3rem;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .footer a {
+            color: #c0d4ec;
+            text-decoration: none;
+        }
+
+        /* responsiveness */
+        @media (max-width: 700px) {
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">Fitness<span>Flow</span></div>
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#bmi">BMI</a>
+            <a href="#workouts">Plans</a>
+            <a href="#library">Exercises</a>
+        </div>
+    </nav>
+
+    <!-- Hero with bouncing arrow -->
+    <section class="hero" id="home">
+        <h1>UNLEASH YOUR STRENGTH</h1>
+        <p>Personalized workout plans, smart BMI tracker, and a huge exercise library — all in one place.</p>
+        <button class="cta-btn" onclick="document.getElementById('bmi').scrollIntoView({behavior:'smooth'})">
+            Get started <i class="fas fa-arrow-down"></i>
+        </button>
+    </section>
+
+    <div class="container">
+        <!-- BMI Calculator Section -->
+        <section id="bmi" class="fade-up">
+            <h2 class="section-title">⚖️ BMI Calculator</h2>
+            <div class="bmi-card">
+                <div class="bmi-left">
+                    <h3>Know your numbers</h3>
+                    <p>Body Mass Index (BMI) is a simple calculation using your height and weight. It helps to estimate body fat and assess health risks.</p>
+                    <p style="margin-top: 1rem;"><i class="fas fa-info-circle" style="color:#f04e31;"></i> Enter your details and get instant category.</p>
+                </div>
+                <div class="bmi-right">
+                    <div class="input-group">
+                        <label><i class="fas fa-arrows-alt-v"></i> Height (cm)</label>
+                        <input type="number" id="height" value="175" step="1" min="100" max="250">
+                    </div>
+                    <div class="input-group">
+                        <label><i class="fas fa-weight-hanging"></i> Weight (kg)</label>
+                        <input type="number" id="weight" value="70" step="0.5" min="30" max="200">
+                    </div>
+                    <div class="bmi-result">
+                        <span class="bmi-value" id="bmiValue">22.9</span>
+                        <span class="bmi-category" id="bmiCategory">Normal weight</span>
+                    </div>
+                    <p style="font-size:0.9rem; color:#4f6a85;"><i class="fas fa-lightbulb"></i> BMI categories: Underweight < 18.5 · Normal 18.5–24.9 · Overweight 25–29.9 · Obese ≥30</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Workout Plans -->
+        <section id="workouts" class="fade-up">
+            <h2 class="section-title">🏋️ Workout plans</h2>
+            <div class="workout-grid">
+                <!-- Beginner plan -->
+                <div class="plan-card">
+                    <div class="plan-icon"><i class="fas fa-seedling"></i></div>
+                    <h3>Foundation</h3>
+                    <span class="level">BEGINNER</span>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Full body · 3x/week</li>
+                        <li><i class="fas fa-check"></i> Bodyweight focus</li>
+                        <li><i class="fas fa-check"></i> 20‑30 min sessions</li>
+                        <li><i class="fas fa-check"></i> Mobility included</li>
+                    </ul>
+                    <button class="plan-btn" onclick="alert('Beginner plan selected → check exercise library')">Start now</button>
+                </div>
+                <!-- Intermediate -->
+                <div class="plan-card">
+                    <div class="plan-icon"><i class="fas fa-bolt"></i></div>
+                    <h3>Strength Builder</h3>
+                    <span class="level">INTERMEDIATE</span>
+                    <ul>
+                        <li><i class="fas fa-check"></i> Push/pull/legs split</li>
+                        <li><i class="fas fa-check"></i> Dumbbell & barbell</li>
+                        <li><i class="fas fa-check"></i> 45‑60 min</li>
+                        <li><i class="fas fa-check"></i> Progressive overload</li>
+                    </ul>
+                    <button class="plan-btn" onclick="alert('Intermediate plan selected → check exercise library')">Start now</button>
+                </div>
+                <!-- Advanced -->
+                <div class="plan-card">
+                    <div class="plan-icon"><i class="fas fa-fire"></i></div>
+                    <h3>Beast Mode</h3>
+                    <span class="level">ADVANCED</span>
+                    <ul>
+                        <li><i class="fas fa-check"></i> 6‑day hybrid</li>
+                        <li><i class="fas fa-check"></i> Strength & hypertrophy</li>
+                        <li><i class="fas fa-check"></i> Advanced techniques</li>
+                        <li><i class="fas fa-check"></i> Customizable</li>
+                    </ul>
+                    <button class="plan-btn" onclick="alert('Advanced plan selected → check exercise library')">Start now</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Exercise Library -->
+        <section id="library" class="fade-up">
+            <h2 class="section-title">📚 Exercise library</h2>
+            <div class="library-grid">
+                <div class="exercise-item" style="--i:1;">
+                    <div class="exercise-img"><i class="fas fa-dumbbell"></i></div>
+                    <div class="exercise-info">
+                        <h4>Push‑ups</h4>
+                        <p>Chest, shoulders, triceps · 3×12</p>
+                    </div>
+                </div>
+                <div class="exercise-item" style="--i:2;">
+                    <div class="exercise-img"><i class="fas fa-dumbbell"></i></div>
+                    <div class="exercise-info">
+                        <h4>Squats</h4>
+                        <p>Quads, glutes, core · bodyweight or loaded</p>
+                    </div>
+                </div>
+                <div class="exercise-item" style="--i:3;">
+                    <div class="exercise-img"><i class="fas fa-dumbbell"></i></div>
+                    <div class="exercise-info">
+                        <h4>Pull‑ups</h4>
+                        <p>Back, biceps · grip variation</p>
+                    </div>
+                </div>
+                <div class="exercise-item" style="--i:4;">
+                    <div class="exercise-img"><i class="fas fa-dumbbell"></i></div>
+                    <div class="exercise-info">
+                        <h4>Plank</h4>
+                        <p>Core stability · 30‑90 sec</p>
+                    </div>
+                </div>
+                <div class="exercise-item" style="--i:5;">
+                    <div class="exercise-img"><i class="fas fa-dumbbell"></i></div>
+                    <div class="exercise-info">
+                        <h4>Lunges</h4>
+                        <p>Legs, balance · walking or reverse</p>
+                    </div>
+                </div>
+                <div class="exercise-item" style="--i:6;">
+                    <div class="exercise-img"><i class="fas fa-dumbbell"></i></div>
+                    <div class="exercise-info">
+                        <h4>Shoulder press</h4>
+                        <p>Deltoids, triceps · dumbbell or barbell</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div>
+                <h3>FitnessFlow</h3>
+                <p>© 2025 — your daily fitness companion</p>
+            </div>
+            <div>
+                <p><i class="fab fa-instagram"></i> @fitnessflow</p>
+                <p><i class="fab fa-twitter"></i> @fitnessflow</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript for BMI and scroll animations -->
+    <script>
+        (function() {
+            // BMI calculator
+            const heightInput = document.getElementById('height');
+            const weightInput = document.getElementById('weight');
+            const bmiValueSpan = document.getElementById('bmiValue');
+            const bmiCategorySpan = document.getElementById('bmiCategory');
+
+            function computeBMI() {
+                const h = parseFloat(heightInput.value) / 100; // cm -> m
+                const w = parseFloat(weightInput.value);
+                if (!h || !w || h <= 0 || w <= 0) {
+                    bmiValueSpan.innerText = '?';
+                    bmiCategorySpan.innerText = 'Invalid';
+                    bmiCategorySpan.style.background = '#95a5a6';
+                    return;
+                }
+
+                // validate range (simple)
+                if (w < 30 || w > 200 || h < 1.0 || h > 2.5) {
+                    heightInput.classList.add('invalid');
+                    weightInput.classList.add('invalid');
+                    setTimeout(() => {
+                        heightInput.classList.remove('invalid');
+                        weightInput.classList.remove('invalid');
+                    }, 400);
+                } else {
+                    heightInput.classList.remove('invalid');
+                    weightInput.classList.remove('invalid');
+                }
+
+                const bmi = w / (h * h);
+                const bmiRounded = bmi.toFixed(1);
+                bmiValueSpan.innerText = bmiRounded;
+                bmiValueSpan.classList.add('pop');
+                setTimeout(() => bmiValueSpan.classList.remove('pop'), 300);
+
+                let category = '';
+                if (bmi < 18.5) category = 'Underweight';
+                else if (bmi < 25) category = 'Normal weight';
+                else if (bmi < 30) category = 'Overweight';
+                else category = 'Obese';
+
+                bmiCategorySpan.innerText = category;
+
+                if (category === 'Normal weight') {
+                    bmiCategorySpan.style.background = '#2ecc71';
+                } else if (category === 'Underweight' || category === 'Overweight') {
+                    bmiCategorySpan.style.background = '#f39c12';
+                } else {
+                    bmiCategorySpan.style.background = '#e74c3c';
+                }
+            }
+
+            heightInput.addEventListener('input', computeBMI);
+            weightInput.addEventListener('input', computeBMI);
+
+            // initial calculation
+            computeBMI();
+
+            // ---------- SCROLL REVEAL ANIMATION (Intersection Observer) ----------
+            const fadeElements = document.querySelectorAll('.fade-up');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('appear');
+                        // optional: unobserve after appearing
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+
+            fadeElements.forEach(el => observer.observe(el));
+
+            // force appear for elements already visible (just in case)
+            setTimeout(() => {
+                fadeElements.forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top < window.innerHeight * 0.8) {
+                        el.classList.add('appear');
+                        observer.unobserve(el);
+                    }
+                });
+            }, 200);
+        })();
+    </script>
+
+    <!-- additional small style for better demo -->
+    <style>
+        /* make sure fade-up elements are hidden until appear */
+        .fade-up:not(.appear) {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        /* hero button pulse but less aggressive on hover */
+        .cta-btn:hover {
+            animation: none;
+        }
+    </style>
+</body>
+</html>

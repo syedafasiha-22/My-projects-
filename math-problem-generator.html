@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Math Problem Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+
+<style>
+/* ── Reset & Variables ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #08090f;
+  --surface:   #10121c;
+  --surface2:  #171a28;
+  --border:    rgba(255,255,255,.07);
+  --text:      #e8eaf0;
+  --muted:     #4a5270;
+  --accent-a:  #5ee7df;   /* teal  – arithmetic  */
+  --accent-b:  #b490f5;   /* violet– algebra     */
+  --accent-c:  #ffc97e;   /* amber – geometry    */
+  --green:     #4ade80;
+  --red:       #f87171;
+  --yellow:    #facc15;
+  --radius:    14px;
+  --shadow:    0 8px 40px rgba(0,0,0,.55);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Lato', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Animated grid background ──────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+}
+
+/* Floating orbs */
+.orb {
+  position: fixed; border-radius: 50%; filter: blur(90px);
+  pointer-events: none; z-index: 0; opacity: .25;
+  animation: drift 18s ease-in-out infinite alternate;
+}
+.orb-1 { width: 420px; height: 420px; background: #1e3a5f; top: -120px; left: -100px; animation-delay: 0s; }
+.orb-2 { width: 320px; height: 320px; background: #2e1b5c; bottom: -80px; right: -80px; animation-delay: -6s; }
+.orb-3 { width: 260px; height: 260px; background: #0f3d35; top: 50%; left: 60%; animation-delay: -12s; }
+
+@keyframes drift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(30px, 20px) scale(1.08); }
+}
+
+/* ── Layout ────────────────────────────────────────────────── */
+#app {
+  position: relative; z-index: 1;
+  max-width: 720px; margin: 0 auto;
+  padding: 40px 20px 80px;
+  display: flex; flex-direction: column; gap: 28px;
+}
+
+/* ── Header ────────────────────────────────────────────────── */
+header { text-align: center; }
+
+.eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 5px; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 10px;
+}
+
+h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.4rem, 7vw, 3.6rem);
+  font-weight: 900; line-height: 1.05; letter-spacing: -1px;
+  background: linear-gradient(135deg, #e8eaf0 20%, #7a8ab0 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Score strip ───────────────────────────────────────────── */
+.score-strip {
+  display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+  margin-top: 22px;
+}
+
+.score-pill {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 8px 20px;
+  text-align: center; min-width: 90px;
+  transition: border-color .3s;
+}
+.score-pill:hover { border-color: rgba(255,255,255,.15); }
+.score-pill .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; color: var(--muted);
+  text-transform: uppercase;
+}
+.score-pill .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 700; color: var(--text);
+  margin-top: 2px;
+}
+
+/* ── Control panel ─────────────────────────────────────────── */
+.control-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+.control-row {
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+
+.control-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px; letter-spacing: 3px; color: var(--muted);
+  text-transform: uppercase; margin-bottom: 8px;
+}
+
+.seg-group {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+
+.seg-btn {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: .5px;
+  padding: 8px 18px; border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: transparent; color: var(--muted);
+  cursor: pointer; transition: all .2s;
+  white-space: nowrap;
+}
+.seg-btn:hover { border-color: rgba(255,255,255,.2); color: var(--text); }
+.seg-btn.active-topic-arithmetic { background: rgba(94,231,223,.12); border-color: var(--accent-a); color: var(--accent-a); }
+.seg-btn.active-topic-algebra    { background: rgba(180,144,245,.12); border-color: var(--accent-b); color: var(--accent-b); }
+.seg-btn.active-topic-geometry   { background: rgba(255,201,126,.12); border-color: var(--accent-c); color: var(--accent-c); }
+.seg-btn.active-level-easy   { background: rgba(74,222,128,.12); border-color: var(--green);  color: var(--green); }
+.seg-btn.active-level-medium { background: rgba(250,204,21,.12);  border-color: var(--yellow); color: var(--yellow); }
+.seg-btn.active-level-hard   { background: rgba(248,113,113,.12); border-color: var(--red);    color: var(--red); }
+
+/* ── Problem card ──────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 32px 28px;
+  position: relative; overflow: hidden;
+  box-shadow: var(--shadow);
+  animation: slideUp .35s cubic-bezier(.22,1,.36,1);
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Top accent bar */
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.card.arithmetic::before { background: var(--accent-a); }
+.card.algebra::before    { background: var(--accent-b); }
+.card.geometry::before   { background: var(--accent-c); }
+
+/* Topic badge */
+.topic-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 20px; margin-bottom: 22px;
+  border: 1px solid;
+}
+.card.arithmetic .topic-badge { color: var(--accent-a); border-color: rgba(94,231,223,.3); background: rgba(94,231,223,.06); }
+.card.algebra    .topic-badge { color: var(--accent-b); border-color: rgba(180,144,245,.3); background: rgba(180,144,245,.06); }
+.card.geometry   .topic-badge { color: var(--accent-c); border-color: rgba(255,201,126,.3); background: rgba(255,201,126,.06); }
+
+/* Level dot */
+.level-dot {
+  display: inline-block; width: 7px; height: 7px;
+  border-radius: 50%; margin-right: 4px;
+}
+.easy-dot   { background: var(--green); }
+.medium-dot { background: var(--yellow); }
+.hard-dot   { background: var(--red); }
+
+/* Question text */
+.question {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.5rem, 4.5vw, 2.1rem);
+  font-weight: 700; line-height: 1.45;
+  color: var(--text); margin-bottom: 32px;
+  white-space: pre-line;
+}
+
+/* ── Answer row ────────────────────────────────────────────── */
+.answer-row {
+  display: flex; gap: 10px; align-items: center;
+}
+
+#answer-input {
+  flex: 1; background: var(--surface2);
+  border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 14px 18px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 18px; font-weight: 600;
+  color: var(--text); outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+#answer-input::placeholder { color: var(--muted); }
+#answer-input:focus {
+  border-color: rgba(255,255,255,.2);
+  box-shadow: 0 0 0 3px rgba(255,255,255,.04);
+}
+#answer-input.correct { border-color: var(--green);  box-shadow: 0 0 0 3px rgba(74,222,128,.1); }
+#answer-input.wrong   { border-color: var(--red);    box-shadow: 0 0 0 3px rgba(248,113,113,.1); }
+
+.btn-check {
+  padding: 14px 28px; border-radius: 10px; border: none;
+  font-family: 'Lato', sans-serif; font-weight: 700;
+  font-size: 15px; cursor: pointer; transition: all .2s;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff; box-shadow: 0 4px 18px rgba(99,102,241,.35);
+  white-space: nowrap;
+}
+.btn-check:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(99,102,241,.45); }
+.btn-check:active { transform: translateY(0); }
+
+/* ── Feedback banner ───────────────────────────────────────── */
+.feedback {
+  margin-top: 16px; padding: 14px 18px; border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace; font-size: 14px;
+  font-weight: 600; display: none; align-items: center; gap: 10px;
+  animation: fadeIn .25s ease;
+}
+.feedback.show { display: flex; }
+.feedback.correct { background: rgba(74,222,128,.1); border: 1px solid rgba(74,222,128,.3); color: var(--green); }
+.feedback.wrong   { background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3); color: var(--red); }
+.feedback-icon { font-size: 20px; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Hint & revealed answer ────────────────────────────────── */
+.hint-box {
+  margin-top: 14px; padding: 14px 18px; border-radius: 10px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
+  font-size: 14px; line-height: 1.6; color: #94a3b8;
+  display: none;
+}
+.hint-box.show { display: block; animation: fadeIn .25s ease; }
+.hint-box strong { color: var(--yellow); }
+
+.answer-reveal {
+  margin-top: 12px; padding: 14px 18px; border-radius: 10px;
+  background: rgba(180,144,245,.08); border: 1px solid rgba(180,144,245,.25);
+  font-family: 'JetBrains Mono', monospace; font-size: 15px;
+  color: var(--accent-b); display: none;
+}
+.answer-reveal.show { display: block; animation: fadeIn .25s ease; }
+
+/* ── Card footer actions ───────────────────────────────────── */
+.card-footer {
+  margin-top: 24px; padding-top: 20px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+}
+
+.btn-ghost {
+  padding: 9px 18px; border-radius: 8px;
+  border: 1.5px solid var(--border); background: transparent;
+  font-family: 'Lato', sans-serif; font-weight: 700;
+  font-size: 13px; color: var(--muted); cursor: pointer;
+  transition: all .2s;
+}
+.btn-ghost:hover { border-color: rgba(255,255,255,.2); color: var(--text); background: rgba(255,255,255,.04); }
+
+.btn-next {
+  margin-left: auto; padding: 9px 22px; border-radius: 8px;
+  border: none; background: var(--surface2);
+  font-family: 'Lato', sans-serif; font-weight: 700;
+  font-size: 13px; color: var(--text); cursor: pointer;
+  transition: all .2s; display: flex; align-items: center; gap: 7px;
+  border: 1.5px solid rgba(255,255,255,.1);
+}
+.btn-next:hover { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); transform: translateX(2px); }
+.btn-next .arrow { font-size: 17px; transition: transform .2s; }
+.btn-next:hover .arrow { transform: translateX(3px); }
+
+/* ── Progress bar ──────────────────────────────────────────── */
+.progress-wrap {
+  height: 3px; background: var(--surface2); border-radius: 3px;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%; background: linear-gradient(90deg, #3b82f6, #6366f1);
+  border-radius: 3px; transition: width .5s cubic-bezier(.22,1,.36,1);
+  width: 0%;
+}
+
+/* ── Streak badge ──────────────────────────────────────────── */
+#streak-badge {
+  display: none; position: fixed; top: 24px; right: 24px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: white; font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 700; padding: 10px 18px;
+  border-radius: 50px; box-shadow: 0 4px 20px rgba(245,158,11,.4);
+  z-index: 100; animation: popIn .35s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn { from { opacity:0; transform: scale(.7) translateY(-10px); } to { opacity:1; transform: scale(1) translateY(0); } }
+
+/* ── Numbers floating deco ─────────────────────────────────── */
+.deco {
+  position: fixed; font-family: 'Playfair Display', serif;
+  font-size: 120px; font-weight: 900; opacity: .025;
+  pointer-events: none; user-select: none; z-index: 0;
+  color: white;
+}
+.deco-1 { top: 5%;   left: 2%;  transform: rotate(-15deg); }
+.deco-2 { bottom: 8%; right: 3%; transform: rotate(10deg); }
+.deco-3 { top: 40%;  left: -2%; transform: rotate(-5deg); font-size: 80px; }
+
+/* ── Toast ─────────────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: #1e2235; border: 1px solid rgba(255,255,255,.12);
+  color: var(--text); padding: 12px 24px; border-radius: 50px;
+  font-size: 14px; font-weight: 600;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+  opacity: 0; transition: all .3s; pointer-events: none; z-index: 200;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 520px) {
+  .card { padding: 24px 18px 20px; }
+  .answer-row { flex-direction: column; }
+  .btn-check { width: 100%; }
+  .score-strip { gap: 8px; }
+  .score-pill { min-width: 75px; padding: 6px 14px; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- Decorative elements -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="deco deco-1">∑</div>
+<div class="deco deco-2">π</div>
+<div class="deco deco-3">x²</div>
+
+<!-- Streak badge -->
+<div id="streak-badge">🔥 <span id="streak-num">3</span> in a row!</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- App -->
+<div id="app">
+
+  <!-- Header -->
+  <header>
+    <div class="eyebrow">// interactive practice tool</div>
+    <h1>Math Problem<br>Generator</h1>
+
+    <div class="score-strip">
+      <div class="score-pill">
+        <div class="label">Score</div>
+        <div class="value" id="sc-score">0/0</div>
+      </div>
+      <div class="score-pill">
+        <div class="label">Accuracy</div>
+        <div class="value" id="sc-acc">—</div>
+      </div>
+      <div class="score-pill">
+        <div class="label">🔥 Streak</div>
+        <div class="value" id="sc-streak">0</div>
+      </div>
+      <div class="score-pill">
+        <div class="label">Problems</div>
+        <div class="value" id="sc-total">0</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Progress bar -->
+  <div class="progress-wrap">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="control-panel">
+    <div>
+      <div class="control-label">Topic</div>
+      <div class="seg-group" id="topic-group">
+        <button class="seg-btn active-topic-arithmetic" data-topic="arithmetic" onclick="setTopic('arithmetic')">∑ Arithmetic</button>
+        <button class="seg-btn" data-topic="algebra"    onclick="setTopic('algebra')">x² Algebra</button>
+        <button class="seg-btn" data-topic="geometry"   onclick="setTopic('geometry')">△ Geometry</button>
+      </div>
+    </div>
+    <div>
+      <div class="control-label">Difficulty</div>
+      <div class="seg-group" id="level-group">
+        <button class="seg-btn active-level-easy"   data-level="easy"   onclick="setLevel('easy')">● Easy</button>
+        <button class="seg-btn" data-level="medium" onclick="setLevel('medium')">◆ Medium</button>
+        <button class="seg-btn" data-level="hard"   onclick="setLevel('hard')">★ Hard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Problem card -->
+  <div class="card arithmetic" id="problem-card">
+    <div class="topic-badge" id="topic-badge">
+      <span class="level-dot easy-dot" id="level-dot"></span>
+      <span id="badge-text">Arithmetic · Easy</span>
+    </div>
+    <div class="question" id="question-text">Loading…</div>
+
+    <div class="answer-row">
+      <input id="answer-input" type="text" placeholder="Your answer…" autocomplete="off" />
+      <button class="btn-check" onclick="checkAnswer()">Check ✓</button>
+    </div>
+
+    <div class="feedback" id="feedback">
+      <span class="feedback-icon" id="feedback-icon"></span>
+      <span id="feedback-text"></span>
+    </div>
+
+    <div class="hint-box" id="hint-box">
+      <strong>Hint:</strong> <span id="hint-text"></span>
+    </div>
+
+    <div class="answer-reveal" id="answer-reveal">
+      <strong style="color:#94a3b8;font-size:11px;letter-spacing:2px;text-transform:uppercase;">Answer:</strong>
+      <div style="margin-top:4px;font-size:18px;" id="answer-text"></div>
+    </div>
+
+    <div class="card-footer">
+      <button class="btn-ghost" onclick="toggleHint()">💡 Hint</button>
+      <button class="btn-ghost" onclick="revealAnswer()">👁 Reveal</button>
+      <button class="btn-next" onclick="nextProblem()">Next problem <span class="arrow">→</span></button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─────────────────────────────────────────────────────── JS ── -->
+<script>
+// ── State ──────────────────────────────────────────────────────
+let state = {
+  topic: 'arithmetic',
+  level: 'easy',
+  problem: null,
+  answered: false,
+  score: { correct: 0, total: 0 },
+  streak: 0,
+};
+
+// ── Utilities ──────────────────────────────────────────────────
+const rnd  = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+const pick = arr => arr[rnd(0, arr.length - 1)];
+
+// ── Problem generators ─────────────────────────────────────────
+function genArithmetic(level) {
+  const opsMap = {
+    easy:   ['+', '-'],
+    medium: ['+', '-', '×'],
+    hard:   ['+', '-', '×', '÷', '²', '√'],
+  };
+  const op = pick(opsMap[level]);
+  let question, answer, hint;
+
+  if (op === '÷') {
+    const d = rnd(2, 9), n = d * rnd(2, 12);
+    question = `Calculate:   ${n} ÷ ${d}`;
+    answer = n / d;
+    hint = `Divide ${n} by ${d}.`;
+  } else if (op === '²') {
+    const b = level === 'hard' ? rnd(5, 18) : rnd(2, 9);
+    question = `Calculate:   ${b}²`;
+    answer = b * b;
+    hint = `Multiply ${b} × ${b}.`;
+  } else if (op === '√') {
+    const perfects = [4,9,16,25,36,49,64,81,100,121,144,169,196,225];
+    const n = pick(perfects);
+    question = `Calculate:   √${n}`;
+    answer = Math.sqrt(n);
+    hint = `What number times itself equals ${n}?`;
+  } else {
+    const ranges = { easy: [1,30], medium: [10,99], hard: [100,999] };
+    const [lo, hi] = ranges[level];
+    const x = rnd(lo, hi), y = rnd(lo, hi);
+    if (op === '+') {
+      question = `Calculate:   ${x} + ${y}`;
+      answer = x + y;
+      hint = 'Add both numbers together.';
+    } else if (op === '-') {
+      const [big, sm] = [Math.max(x,y), Math.min(x,y)];
+      question = `Calculate:   ${big} − ${sm}`;
+      answer = big - sm;
+      hint = 'Subtract the smaller from the larger.';
+    } else {
+      const a = rnd(2, level === 'hard' ? 25 : 12), b2 = rnd(2, level === 'hard' ? 25 : 12);
+      question = `Calculate:   ${a} × ${b2}`;
+      answer = a * b2;
+      hint = `Multiply ${a} by ${b2}.`;
+    }
+  }
+  return { question, answer, hint, isText: false };
+}
+
+function genAlgebra(level) {
+  if (level === 'easy') {
+    const a = rnd(1, 10), b = rnd(1, 20);
+    return {
+      question: `Solve for x:\n\n  x − ${a} = ${b}`,
+      answer: a + b,
+      hint: `Add ${a} to both sides of the equation.`,
+      isText: false,
+    };
+  }
+  if (level === 'medium') {
+    const variants = rnd(0, 2);
+    if (variants === 0) {
+      const a = rnd(2, 9), b = rnd(1, 8);
+      return {
+        question: `Solve for x:\n\n  ${a}x = ${a * b}`,
+        answer: b,
+        hint: `Divide both sides by ${a}.`,
+        isText: false,
+      };
+    } else if (variants === 1) {
+      const a = rnd(2, 7), b = rnd(1, 8), c = rnd(1, 15);
+      return {
+        question: `Solve for x:\n\n  ${a}x + ${c} = ${a*b + c}`,
+        answer: b,
+        hint: `Subtract ${c} from both sides, then divide by ${a}.`,
+        isText: false,
+      };
+    } else {
+      const a = rnd(2, 6), b = rnd(2, 6), c = rnd(1, 10);
+      return {
+        question: `Solve for x:\n\n  ${a}x − ${c} = ${a*b - c}`,
+        answer: b,
+        hint: `Add ${c} to both sides, then divide by ${a}.`,
+        isText: false,
+      };
+    }
+  }
+  // Hard: quadratics (perfect integer roots)
+  const r1 = rnd(1, 8), r2 = rnd(1, 8);
+  const bCoef = -(r1 + r2), cCoef = r1 * r2;
+  const fmtCoef = n => n >= 0 ? `+ ${n}` : `− ${Math.abs(n)}`;
+  return {
+    question: `Solve for x:\n\n  x² ${fmtCoef(bCoef)}x ${fmtCoef(cCoef)} = 0`,
+    answer: `${r1} and ${r2}`,
+    hint: `Factor as (x − ${r1})(x − ${r2}) = 0`,
+    isText: true,
+  };
+}
+
+function genGeometry(level) {
+  const shapesByLevel = {
+    easy:   ['rect-area', 'tri-area', 'sq-area'],
+    medium: ['circle-area', 'rect-perim', 'tri-perim', 'parallelogram'],
+    hard:   ['circle-circ', 'pythagoras', 'trapezoid', 'sector-area'],
+  };
+  const shape = pick(shapesByLevel[level]);
+  const PI = Math.PI;
+
+  switch (shape) {
+    case 'rect-area': {
+      const w = rnd(2,15), h = rnd(2,15);
+      return { question: `Rectangle with width ${w} and height ${h}.\n\nFind the Area.`, answer: w*h, hint: 'Area = width × height', isText:false };
+    }
+    case 'sq-area': {
+      const s = rnd(3,14);
+      return { question: `Square with side length ${s}.\n\nFind the Area.`, answer: s*s, hint: 'Area = side²', isText:false };
+    }
+    case 'tri-area': {
+      const b = rnd(2,14)*2, h = rnd(2,14);
+      return { question: `Triangle with base ${b} and height ${h}.\n\nFind the Area.`, answer: b*h/2, hint: 'Area = ½ × base × height', isText:false };
+    }
+    case 'circle-area': {
+      const r = rnd(2,10);
+      return { question: `Circle with radius ${r}.\n\nFind the Area.\n(Use π ≈ 3.14)`, answer: parseFloat((PI*r*r).toFixed(2)), hint: 'Area = π × r²', isText:false };
+    }
+    case 'rect-perim': {
+      const w = rnd(3,20), h = rnd(3,20);
+      return { question: `Rectangle with width ${w} and height ${h}.\n\nFind the Perimeter.`, answer: 2*(w+h), hint: 'Perimeter = 2(width + height)', isText:false };
+    }
+    case 'tri-perim': {
+      const a=rnd(3,12), b=rnd(3,12), c=rnd(3,12);
+      return { question: `Triangle with sides ${a}, ${b}, and ${c}.\n\nFind the Perimeter.`, answer: a+b+c, hint: 'Perimeter = a + b + c', isText:false };
+    }
+    case 'parallelogram': {
+      const b=rnd(4,14)*2, h=rnd(3,10);
+      return { question: `Parallelogram with base ${b} and height ${h}.\n\nFind the Area.`, answer: b*h, hint: 'Area = base × height', isText:false };
+    }
+    case 'circle-circ': {
+      const r = rnd(2,12);
+      return { question: `Circle with radius ${r}.\n\nFind the Circumference.\n(Use π ≈ 3.14)`, answer: parseFloat((2*PI*r).toFixed(2)), hint: 'Circumference = 2 × π × r', isText:false };
+    }
+    case 'pythagoras': {
+      const trips = [[3,4,5],[5,12,13],[8,15,17],[7,24,25],[9,40,41],[6,8,10]];
+      const [a,b,c] = pick(trips);
+      return { question: `Right triangle with legs ${a} and ${b}.\n\nFind the hypotenuse c.`, answer: c, hint: 'c² = a² + b²  →  c = √(a² + b²)', isText:false };
+    }
+    case 'trapezoid': {
+      const a=rnd(4,14), b=rnd(4,14), h=rnd(3,10);
+      return { question: `Trapezoid with parallel sides ${a} and ${b},\nheight ${h}.\n\nFind the Area.`, answer: parseFloat(((a+b)*h/2).toFixed(2)), hint: 'Area = ½ × (a + b) × h', isText:false };
+    }
+    case 'sector-area': {
+      const r=rnd(3,10), degs=[30,45,60,90,120,180];
+      const deg = pick(degs);
+      const area = parseFloat((PI*r*r*deg/360).toFixed(2));
+      return { question: `Sector of a circle with radius ${r}\nand central angle ${deg}°.\n\nFind the Area.\n(Use π ≈ 3.14)`, answer: area, hint: `Area = (θ/360) × π × r²  where θ = ${deg}°`, isText:false };
+    }
+    default: return genGeometry('easy');
+  }
+}
+
+function generateProblem(topic, level) {
+  if (topic === 'arithmetic') return genArithmetic(level);
+  if (topic === 'algebra')    return genAlgebra(level);
+  return genGeometry(level);
+}
+
+// ── Render ─────────────────────────────────────────────────────
+function render() {
+  const p = state.problem;
+  if (!p) return;
+
+  // Card class
+  const card = document.getElementById('problem-card');
+  card.className = `card ${state.topic}`;
+
+  // Badge
+  const dotClass = { easy:'easy-dot', medium:'medium-dot', hard:'hard-dot' }[state.level];
+  document.getElementById('level-dot').className = `level-dot ${dotClass}`;
+  const topicLabel = state.topic.charAt(0).toUpperCase() + state.topic.slice(1);
+  const levelLabel = state.level.charAt(0).toUpperCase() + state.level.slice(1);
+  document.getElementById('badge-text').textContent = `${topicLabel} · ${levelLabel}`;
+
+  // Question
+  document.getElementById('question-text').textContent = p.question;
+
+  // Reset input & feedback
+  const inp = document.getElementById('answer-input');
+  inp.value = '';
+  inp.className = '';
+  inp.placeholder = p.isText ? 'e.g. 3 and 5' : 'Your answer…';
+  inp.disabled = false;
+
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('hint-box').className = 'hint-box';
+  document.getElementById('answer-reveal').className = 'answer-reveal';
+  document.getElementById('hint-text').textContent = p.hint;
+  document.getElementById('answer-text').textContent = p.isText ? p.answer : p.answer;
+
+  // Animate card
+  card.style.animation = 'none';
+  void card.offsetWidth;
+  card.style.animation = 'slideUp .35s cubic-bezier(.22,1,.36,1)';
+
+  // Focus input
+  setTimeout(() => inp.focus(), 50);
+}
+
+function updateScoreboard() {
+  const { correct, total } = state.score;
+  document.getElementById('sc-score').textContent   = `${correct}/${total}`;
+  document.getElementById('sc-acc').textContent     = total ? `${Math.round(correct/total*100)}%` : '—';
+  document.getElementById('sc-streak').textContent  = state.streak;
+  document.getElementById('sc-total').textContent   = total;
+
+  // Progress bar (accuracy)
+  const pct = total ? (correct/total*100) : 0;
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+// ── Topic / Level ──────────────────────────────────────────────
+function setTopic(t) {
+  state.topic = t;
+  document.querySelectorAll('#topic-group .seg-btn').forEach(b => {
+    b.className = 'seg-btn' + (b.dataset.topic === t ? ` active-topic-${t}` : '');
+  });
+  nextProblem();
+}
+
+function setLevel(l) {
+  state.level = l;
+  document.querySelectorAll('#level-group .seg-btn').forEach(b => {
+    b.className = 'seg-btn' + (b.dataset.level === l ? ` active-level-${l}` : '');
+  });
+  nextProblem();
+}
+
+// ── Next problem ───────────────────────────────────────────────
+function nextProblem() {
+  state.problem = generateProblem(state.topic, state.level);
+  state.answered = false;
+  render();
+}
+
+// ── Check answer ───────────────────────────────────────────────
+function checkAnswer() {
+  if (state.answered) return nextProblem();
+
+  const p = state.problem;
+  const raw = document.getElementById('answer-input').value.trim();
+  if (!raw) { showToast('Please enter an answer first!'); return; }
+
+  let correct;
+  if (p.isText) {
+    // For algebraic roots like "3 and 5" — check both numbers appear
+    const nums = p.answer.match(/\d+/g) || [];
+    correct = nums.every(n => raw.includes(n));
+  } else {
+    correct = Math.abs(parseFloat(raw) - parseFloat(p.answer)) < 0.05;
+  }
+
+  state.answered = true;
+  state.score.total++;
+  if (correct) {
+    state.score.correct++;
+    state.streak++;
+  } else {
+    state.streak = 0;
+  }
+  updateScoreboard();
+
+  // Input style
+  const inp = document.getElementById('answer-input');
+  inp.className = correct ? 'correct' : 'wrong';
+
+  // Feedback
+  const fb = document.getElementById('feedback');
+  document.getElementById('feedback-icon').textContent = correct ? '✓' : '✗';
+  document.getElementById('feedback-text').textContent = correct
+    ? pick(['Excellent work! 🎉', 'Perfect! Keep it up!', 'Correct! Well done!', 'Nailed it! ✨'])
+    : `Not quite. The answer is: ${p.answer}`;
+  fb.className = `feedback show ${correct ? 'correct' : 'wrong'}`;
+
+  // Streak badge
+  if (state.streak >= 3) {
+    const badge = document.getElementById('streak-badge');
+    document.getElementById('streak-num').textContent = state.streak;
+    badge.style.display = 'block';
+    badge.style.animation = 'none';
+    void badge.offsetWidth;
+    badge.style.animation = 'popIn .35s cubic-bezier(.34,1.56,.64,1)';
+    setTimeout(() => { badge.style.display = 'none'; }, 2800);
+  }
+
+  // Change button text
+  document.querySelector('.btn-check').textContent = 'Next →';
+}
+
+// ── Hint ───────────────────────────────────────────────────────
+function toggleHint() {
+  const box = document.getElementById('hint-box');
+  box.className = box.classList.contains('show') ? 'hint-box' : 'hint-box show';
+}
+
+// ── Reveal answer ──────────────────────────────────────────────
+function revealAnswer() {
+  if (!state.answered) {
+    state.score.total++;
+    state.streak = 0;
+    state.answered = true;
+    document.getElementById('answer-input').disabled = true;
+    updateScoreboard();
+  }
+  document.getElementById('answer-reveal').className = 'answer-reveal show';
+  document.querySelector('.btn-check').textContent = 'Next →';
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── Keyboard shortcut ──────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (document.activeElement === document.getElementById('answer-input') || state.answered) {
+      checkAnswer();
+    }
+  }
+});
+
+// ── Init ───────────────────────────────────────────────────────
+nextProblem();
+updateScoreboard();
+</script>
+</body>
+</html>

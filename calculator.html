@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>digital · calculator + animations</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: linear-gradient(145deg, #e0e5ec 0%, #f0f4fa 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Roboto, system-ui, -apple-system, 'Poppins', sans-serif;
+      padding: 1rem;
+      margin: 0;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      0% { opacity: 0; transform: scale(0.98); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .calculator {
+      width: 100%;
+      max-width: 380px;
+      background: #eef2f5;
+      border-radius: 2.5rem;
+      box-shadow: 
+        12px 12px 24px rgba(166, 180, 200, 0.5),
+        -8px -8px 16px rgba(255, 255, 255, 0.7),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.6),
+        inset -3px -3px 6px rgba(166, 180, 200, 0.3);
+      padding: 1.8rem 1.5rem 2rem;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .calculator:hover {
+      box-shadow: 
+        14px 14px 28px rgba(166, 180, 200, 0.6),
+        -10px -10px 20px rgba(255, 255, 255, 0.8),
+        inset 2px 2px 4px rgba(255, 255, 255, 0.6),
+        inset -3px -3px 6px rgba(166, 180, 200, 0.3);
+    }
+
+    .display {
+      background: #e6ebf0;
+      border-radius: 1.8rem;
+      box-shadow: 
+        inset 6px 6px 12px rgba(166, 180, 200, 0.4),
+        inset -6px -6px 12px rgba(255, 255, 255, 0.7);
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 2rem;
+      text-align: right;
+      font-size: 2.4rem;
+      font-weight: 400;
+      letter-spacing: 1px;
+      color: #1e2b3a;
+      line-height: 1.2;
+      word-wrap: break-word;
+      word-break: break-all;
+      min-height: 5.8rem;
+      border: none;
+      outline: none;
+      width: 100%;
+      font-family: 'Courier New', monospace;
+      caret-color: transparent;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    /* animation for display updates */
+    .display-flash {
+      animation: flashBg 0.25s ease;
+    }
+
+    @keyframes flashBg {
+      0% { background: #e6ebf0; }
+      20% { background: #cfdbe8; }
+      100% { background: #e6ebf0; }
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.9rem;
+    }
+
+    /* generic button style — soft neumorph with smooth transitions */
+    .btn {
+      background: #eef2f5;
+      border: none;
+      border-radius: 1.8rem;
+      padding: 1.1rem 0.2rem;
+      font-size: 1.7rem;
+      font-weight: 500;
+      color: #2c3e50;
+      box-shadow: 
+        7px 7px 14px rgba(166, 180, 200, 0.5),
+        -7px -7px 14px rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      font-family: inherit;
+      transition: all 0.18s ease;
+      transform: scale(1);
+      transform-origin: center;
+    }
+
+    /* Hover animation: gentle scale and shadow change */
+    .btn:hover {
+      transform: scale(1.03);
+      box-shadow: 
+        9px 9px 18px rgba(166, 180, 200, 0.6),
+        -9px -9px 18px rgba(255, 255, 255, 0.9);
+    }
+
+    .btn:active {
+      box-shadow: 
+        inset 5px 5px 12px rgba(166, 180, 200, 0.6),
+        inset -5px -5px 12px rgba(255, 255, 255, 0.6);
+      color: #1d2b3a;
+      transform: scale(0.96);
+      transition: all 0.07s;
+    }
+
+    /* operator & special keys get a slight tint */
+    .btn.operator {
+      color: #c44536;
+      font-size: 2rem;
+      font-weight: 600;
+    }
+
+    .btn.clear {
+      color: #b13e3e;
+      font-weight: 600;
+    }
+
+    .btn.backspace {
+      font-size: 1.6rem;
+      font-weight: 400;
+    }
+
+    /* Equals button gets a subtle pulse animation on hover */
+    .btn.equals {
+      background: #d5dce8;
+      color: #1e3b4f;
+      font-weight: 600;
+      box-shadow: 
+        7px 7px 14px rgba(166, 180, 200, 0.5),
+        -7px -7px 14px #ffffff;
+      transition: all 0.2s ease;
+    }
+
+    .btn.equals:hover {
+      animation: gentlePulse 1.2s infinite;
+      background: #dbe2ef;
+    }
+
+    @keyframes gentlePulse {
+      0% { box-shadow: 7px 7px 14px rgba(166,180,200,0.5), -7px -7px 14px #ffffff; }
+      50% { box-shadow: 10px 10px 20px rgba(166,180,200,0.7), -10px -10px 20px #ffffff; transform: scale(1.02); }
+      100% { box-shadow: 7px 7px 14px rgba(166,180,200,0.5), -7px -7px 14px #ffffff; }
+    }
+
+    /* zero button spans two columns */
+    .btn.zero {
+      grid-column: span 2;
+      padding: 1.1rem 0.8rem;
+    }
+
+    /* placeholder cell (empty, invisible) */
+    .placeholder {
+      background: transparent;
+      box-shadow: none;
+      pointer-events: none;
+    }
+
+    /* keyboard focus outline (accessibility) */
+    .btn:focus-visible {
+      outline: 2px solid #4f7aa6;
+      outline-offset: 4px;
+    }
+
+    @media (max-width: 400px) {
+      .calculator { padding: 1.2rem; }
+      .display { font-size: 2rem; padding: 1rem; }
+      .btn { font-size: 1.5rem; padding: 0.9rem 0.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <!-- display is readonly, acts as digital screen -->
+    <input type="text" class="display" id="display" value="0" readonly aria-label="calculator display">
+
+    <div class="button-grid" id="button-grid">
+      <!-- row1 -->
+      <button class="btn clear" data-action="clear">C</button>
+      <button class="btn backspace" data-action="backspace">⌫</button>
+      <button class="btn operator" data-operator="/">÷</button>
+      <button class="btn operator" data-operator="*">×</button>
+
+      <!-- row2 -->
+      <button class="btn" data-digit="7">7</button>
+      <button class="btn" data-digit="8">8</button>
+      <button class="btn" data-digit="9">9</button>
+      <button class="btn operator" data-operator="-">−</button>
+
+      <!-- row3 -->
+      <button class="btn" data-digit="4">4</button>
+      <button class="btn" data-digit="5">5</button>
+      <button class="btn" data-digit="6">6</button>
+      <button class="btn operator" data-operator="+">+</button>
+
+      <!-- row4 -->
+      <button class="btn" data-digit="1">1</button>
+      <button class="btn" data-digit="2">2</button>
+      <button class="btn" data-digit="3">3</button>
+      <!-- empty placeholder cell (row4, col4) -->
+      <div class="placeholder"></div>
+
+      <!-- row5: zero spans 2 columns, decimal, equals -->
+      <button class="btn zero" data-digit="0">0</button>
+      <button class="btn" data-digit=".">.</button>
+      <button class="btn equals" data-action="equals">=</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // --- DOM elements ---
+      const display = document.getElementById('display');
+      const buttonGrid = document.getElementById('button-grid');
+
+      // --- calculator state ---
+      let firstOperand = null;           // stored number before operator
+      let operator = null;               // current operator (+, -, *, /)
+      let resetDisplay = false;           // if true, next digit replaces display
+      let displayValue = '0';             // current shown string
+
+      // --- helper: update display input and trigger flash animation ---
+      function updateDisplay() {
+        display.value = displayValue;
+        // add flash animation class
+        display.classList.add('display-flash');
+        // remove class after animation ends to allow re-trigger
+        setTimeout(() => {
+          display.classList.remove('display-flash');
+        }, 280); // slightly longer than animation to avoid flicker
+      }
+
+      // --- initial refresh ---
+      updateDisplay();
+
+      // --- core arithmetic (with basic float precision handling) ---
+      function compute(op, a, b) {
+        const x = parseFloat(a);
+        const y = parseFloat(b);
+        if (isNaN(x) || isNaN(y)) return b; // fallback
+
+        switch (op) {
+          case '+': return x + y;
+          case '-': return x - y;
+          case '*': return x * y;
+          case '/': 
+            if (y === 0) return 'Error';   // division by zero
+            return x / y;
+          default: return y;
+        }
+      }
+
+      // --- handle digit or decimal input ---
+      function inputDigit(digit) {
+        if (resetDisplay) {
+          // start fresh new number
+          displayValue = digit;
+          resetDisplay = false;
+        } else {
+          if (digit === '.') {
+            // avoid multiple decimals
+            if (displayValue.includes('.')) return;
+            // if current is empty or just '0' -> prepend '0.'
+            if (displayValue === '' || displayValue === '0') {
+              displayValue = '0.';
+            } else {
+              displayValue += '.';
+            }
+          } else {
+            // digit 0-9
+            if (displayValue === '0') {
+              displayValue = digit;        // replace leading zero
+            } else {
+              displayValue += digit;
+            }
+          }
+        }
+        updateDisplay();
+      }
+
+      // --- handle operator press ---
+      function handleOperator(nextOp) {
+        const currentValue = parseFloat(displayValue);
+
+        // if previous result was error, reset everything
+        if (displayValue === 'Error') {
+          clearAll();
+          displayValue = '0';
+          firstOperand = null;
+          operator = null;
+          resetDisplay = false;
+          updateDisplay();
+        }
+
+        // if firstOperand is null, store it and wait for second
+        if (firstOperand === null) {
+          firstOperand = currentValue;
+          operator = nextOp;
+          resetDisplay = true;   // next digit will start new number
+        } 
+        // if operator already exists, we can chain: compute previous, then set new operator
+        else if (operator) {
+          const result = compute(operator, firstOperand, currentValue);
+          if (result === 'Error') {
+            displayValue = 'Error';
+            firstOperand = null;
+            operator = null;
+            resetDisplay = true;
+            updateDisplay();
+            return;
+          }
+          // store result as first operand for further operations
+          displayValue = String(result);
+          firstOperand = result;
+          operator = nextOp;        // new operator
+          resetDisplay = true;
+          updateDisplay();
+        } else {
+          // no previous operator (shouldn't happen often)
+          firstOperand = currentValue;
+          operator = nextOp;
+          resetDisplay = true;
+        }
+      }
+
+      // --- handle equals ---
+      function handleEquals() {
+        if (displayValue === 'Error') {
+          clearAll();
+          return;
+        }
+
+        const currentValue = parseFloat(displayValue);
+        if (firstOperand !== null && operator) {
+          const result = compute(operator, firstOperand, currentValue);
+          if (result === 'Error') {
+            displayValue = 'Error';
+            firstOperand = null;
+            operator = null;
+            resetDisplay = true;
+            updateDisplay();
+            return;
+          }
+          displayValue = String(result);
+          firstOperand = null;    // reset for fresh start
+          operator = null;
+          resetDisplay = true;    // next digit starts new number
+          updateDisplay();
+        } else {
+          // nothing pending: just keep display, but reset flag so digit overwrites
+          resetDisplay = true;
+        }
+      }
+
+      // --- clear all (C) ---
+      function clearAll() {
+        displayValue = '0';
+        firstOperand = null;
+        operator = null;
+        resetDisplay = false;
+        updateDisplay();
+      }
+
+      // --- backspace ---
+      function backspace() {
+        if (displayValue === 'Error') {
+          clearAll();
+          return;
+        }
+        // if we are in reset mode, backspace should affect current displayed number
+        // (which is usually the previous operand, but we let user edit it)
+        if (displayValue.length > 1) {
+          displayValue = displayValue.slice(0, -1);
+        } else {
+          displayValue = '0';
+        }
+        // if after backspace we have just '-'? not possible, but ensure no empty
+        if (displayValue === '' || displayValue === '-') {
+          displayValue = '0';
+        }
+        updateDisplay();
+      }
+
+      // --- handle keyboard events ---
+      function handleKeyDown(e) {
+        const key = e.key;
+        // prevent default behaviour for control keys to avoid page scrolling
+        const controlKeys = ['Enter', 'Escape', 'Backspace', '+', '-', '*', '/', '=', '.'];
+        if (controlKeys.includes(key) || (key >= '0' && key <= '9')) {
+          e.preventDefault();
+        }
+
+        // digits 0-9
+        if (key >= '0' && key <= '9') {
+          inputDigit(key);
+        }
+        // decimal point
+        else if (key === '.') {
+          inputDigit('.');
+        }
+        // operators
+        else if (key === '+' || key === '-' || key === '*' || key === '/') {
+          handleOperator(key);
+        }
+        // equals (Enter or '=')
+        else if (key === 'Enter' || key === '=') {
+          handleEquals();
+        }
+        // escape -> clear
+        else if (key === 'Escape') {
+          clearAll();
+        }
+        // backspace
+        else if (key === 'Backspace') {
+          backspace();
+        }
+      }
+
+      // --- attach event listeners ---
+
+      // button clicks via delegation
+      buttonGrid.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn');
+        if (!btn) return; // ignore placeholder or gaps
+
+        // prevent double click on disabled area
+        if (btn.classList.contains('placeholder')) return;
+
+        // --- handle different button types ---
+        if (btn.hasAttribute('data-digit')) {
+          const digit = btn.getAttribute('data-digit');
+          inputDigit(digit);
+        }
+        else if (btn.hasAttribute('data-operator')) {
+          const op = btn.getAttribute('data-operator');
+          handleOperator(op);
+        }
+        else if (btn.getAttribute('data-action') === 'clear') {
+          clearAll();
+        }
+        else if (btn.getAttribute('data-action') === 'backspace') {
+          backspace();
+        }
+        else if (btn.getAttribute('data-action') === 'equals') {
+          handleEquals();
+        }
+      });
+
+      // keyboard listener
+      window.addEventListener('keydown', handleKeyDown);
+
+      // optional: prevent typing into display (it's readonly but just in case)
+      display.addEventListener('keydown', (e) => e.preventDefault());
+
+      // small helper: if 'Error' remains, clear on any next digit/op (handled inside)
+    })();
+  </script>
+</body>
+</html>
